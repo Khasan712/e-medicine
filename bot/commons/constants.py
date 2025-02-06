@@ -1,0 +1,2 @@
+UZBEK_LANG = 'uz'
+RUSSIAN_LANG = 'ru'
