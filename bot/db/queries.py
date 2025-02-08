@@ -227,8 +227,8 @@ async def get_order_items_by_order_id(session: AsyncSession, client_id, order_id
             joinedload(OrderItem.product)
         )
         .filter(
-            Order.client_id == client_id,
-            Order.order_id == order_id,
+            Order.client_id == int(client_id),
+            OrderItem.order_id == int(order_id),
         ).order_by(OrderItem.created_at.desc())
     )
     return result.scalars().all()
@@ -242,7 +242,7 @@ async def get_order(session: AsyncSession, client_id):
 async def get_order_by_id_exclude_new(session: AsyncSession, client_id, order_id):
     result = await session.execute(
         select(Order)
-        .filter_by(Order.client_id==client_id, Order.status!=NEW_ORDER_STATUS, Order.id == order_id)
+        .filter(Order.client_id==client_id, Order.status!=NEW_ORDER_STATUS, Order.id == int(order_id))
     )
     return result.scalars().first()
 

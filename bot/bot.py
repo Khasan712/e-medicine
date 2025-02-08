@@ -10,7 +10,8 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message, CallbackQuery
 
-from commons.products import get_product_detail_template, get_order_items_template, get_order_confirm_template
+from commons.products import get_product_detail_template, get_order_items_template, get_order_confirm_template, \
+    get_order_items_detail_template
 from keyboards.inline.language import get_quantity_keyboard, get_quantity_and_remove_keyboard, get_order_items_keyboard, \
     get_confirmation_emojis, get_confirmation_location, get_order_confirmation_phone, get_confirm_order_keyboard
 from keyboards.markup.language import get_main_menu, language_markup, get_phone_markup, \
@@ -146,8 +147,9 @@ async def handler_my_orders(message: Message, state: FSMContext) -> None:
         if not order_items:
             await message.answer(text=DICTIONARY['35'][client.lang], reply_markup=markup)
         else:
-            await message.answer(text=DICTIONARY['25'][client.lang], reply_markup=markup)
-
+            text = get_order_items_detail_template(order_items, client.lang, order)
+            await message.answer(text=DICTIONARY['25'][client.lang])
+            await message.answer(text=text, reply_markup=markup)
 
 
 # Products list handler

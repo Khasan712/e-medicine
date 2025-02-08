@@ -20,11 +20,11 @@ def get_product_detail_template(name, desc, price, quantity, lang):
            f"💵 Общая сумма: {int(price) * quantity} UZS"
 
 
-def get_order_items_template(order_items, lang, order):
-    text = ""
+def get_order_items_detail_template(order_items, lang, order):
     total = 0
     updated_time = order.updated_at.astimezone(TASHKENT_TZ).strftime("%Y-%m-%d %H:%M") if order.updated_at else "N/A"
     status = DICTIONARY['34'][lang][order.status]
+    text = f"ID: {order.id} | {DICTIONARY['33'][lang]}: {status}\n\n"
     for order_item in order_items:
         price = int(re.sub(r"\D", "", order_item.product.price))
         quantity = int(order_item.quantity)
@@ -37,13 +37,15 @@ def get_order_items_template(order_items, lang, order):
             text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {item_total} UZS"
             total += int(item_total)
     if lang == UZBEK_LANG:
-        text += f"\n\n💵 Umumiy: {total} UZS"
+        text += f"\n\n💵 Umumiy: {total} UZS\n" \
+                f"{DICTIONARY['32'][lang]}: {updated_time}"
     else:
-        text += f"\n\n💵 Общая сумма: {total} UZS"
+        text += f"\n\n💵 Общая сумма: {total} UZS\n" \
+                f"{DICTIONARY['32'][lang]}: {updated_time}"
     return text
 
 
-def get_order_items_detail_template(order_items, lang):
+def get_order_items_template(order_items, lang):
     text = ""
     total = 0
     for order_item in order_items:
