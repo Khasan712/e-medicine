@@ -11,3 +11,4 @@ setuptools==75.8.0
 sqlparse==0.5.3
 zope.event==5.0
 zope.interface==7.2
+gunicorn==23.0.0
