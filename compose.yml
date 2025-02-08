@@ -7,6 +7,7 @@ services:
     command: bash entrypoint.sh
     volumes:
       - .:/app
+      - ./media:/app/media
     env_file:
       - .env
     depends_on:
@@ -23,6 +24,22 @@ services:
       - ./.env
     ports:
       - 5439:5432
+
+  bot:
+    build:
+      context: ./bot  # Path to the bot's directory
+    container_name: "e_medicine_bot"
+    restart: always
+    command: python bot.py  # Ensure bot starts correctly
+    volumes:
+      - ./bot:/bot  # Mount bot directory
+    working_dir: /bot  # Ensure bot runs from its directory
+    env_file:
+      - .env  # Use the same env file as Django
+    depends_on:
+      - db  # Ensure DB is ready before starting bot
+    networks:
+      - default  # Connects to the same Docker network
 
 volumes:
   postgres_data:

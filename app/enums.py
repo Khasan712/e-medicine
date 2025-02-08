@@ -24,3 +24,17 @@ class LanguageEnum(Enum):
             (key.value, key.name)
             for key in cls
         )
+
+
+class OrderEnum(Enum):
+    new = 'new'
+    ordered = 'ordered'
+    rejected = 'rejected'
+    completed = 'completed'
+
+    @classmethod
+    def choices(cls):
+        return (
+            (key.value, key.name)
+            for key in cls
+        )
