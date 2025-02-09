@@ -21,7 +21,7 @@ class CustomUserAdmin(UserAdmin):
 
     fieldsets = (
         ("Personal Info", {"fields": ("phone_number", "first_name", "last_name", "role")}),
-        ("Permissions", {"fields": ("is_active", "is_staff", "is_deleted", "is_confirmed")}),
+        ("Permissions", {"fields": ("is_active", "is_staff", "is_superuser")}),
         ("Important Dates", {"fields": ("created_at", "updated_at")}),
     )
 
@@ -35,6 +35,14 @@ class CustomUserAdmin(UserAdmin):
     search_fields = ("phone_number", "first_name", "last_name")
     ordering = ("id",)
     readonly_fields = ("created_at", "updated_at")  # ✅ Make these fields read-only
+    
+    def save_model(self, request, obj, form, change):
+        """ ✅ Auto set `is_staff=True` for managers """
+        if obj.role in ["admin", "manager"]:
+            obj.is_staff = True
+        else:
+            obj.is_staff = False
+        obj.save()
 
     # ✅ Restrict Add Permission - Only Admins Can Add Users
     def has_add_permission(self, request):
