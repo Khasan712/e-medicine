@@ -125,3 +125,4 @@ class OrderAdmin(admin.ModelAdmin):
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = ("id", 'order', 'product', 'quantity', 'price', 'created_at', 'updated_at')
 
+
