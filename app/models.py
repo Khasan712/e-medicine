@@ -1,4 +1,7 @@
+import base64
+from io import BytesIO
 from django.db import models
+from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 
 from app.enums import UserRole, OrderEnum
@@ -38,6 +41,7 @@ class Descriptions(models.Model):
 
 class Product(models.Model):
     img = models.ImageField(upload_to='products/')
+    img_64 = models.TextField(blank=True, null=True)
     name_uz = models.CharField(max_length=255)
     name_ru = models.CharField(max_length=255)
     price = models.CharField(max_length=255)
@@ -46,6 +50,19 @@ class Product(models.Model):
     measure = models.ForeignKey(Descriptions, on_delete=models.DO_NOTHING)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def save_image_as_base64(self, image):
+        """ Convert uploaded image to Base64 and store it """
+        if isinstance(image, InMemoryUploadedFile):
+            image_data = image.read()
+            self.img_64 = base64.b64encode(image_data).decode('utf-8')
+            print(self.img_64)
+
+    def save(self, *args, **kwargs):
+        """ Ensure Base64 field updates when the image changes """
+        if hasattr(self, '_uploaded_image'):
+            self.save_image_as_base64(self._uploaded_image)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.name_uz}'

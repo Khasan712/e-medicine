@@ -1,4 +1,6 @@
 from django.contrib import admin
+
+from .forms import ProductAdminForm
 from .models import User, Product, Descriptions, Client, Order, OrderItem
 from django.utils.html import format_html
 
@@ -10,7 +12,9 @@ class UserAdmin(admin.ModelAdmin):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
+    form = ProductAdminForm
     list_display = ("id", 'name_uz', 'name_ru', 'price', 'measure_uz', 'measure_ru', 'created_at')
+    readonly_fields = ('display_base64_image',)
 
     def measure_uz(self, obj):
         try:
@@ -27,6 +31,22 @@ class ProductAdmin(admin.ModelAdmin):
             print(str(e))
             return '-'
     measure_ru.short_description = 'measure ru'
+
+    def display_base64_image(self, obj):
+        """ Display the Base64 image in Admin """
+        if obj.img_64:
+            return format_html(
+                '<img src="data:image/png;base64,{}" style="max-width: 200px; max-height: 200px;" />',
+                obj.img_64
+            )
+        return "No Image"
+
+    display_base64_image.short_description = "Product Image"
+
+    def get_fields(self, request, obj=None):
+        """ Show the Base64 image inside the product detail page """
+        fields = super().get_fields(request, obj)
+        return ('display_base64_image',) + tuple(fields)
 
 
 @admin.register(Descriptions)
@@ -47,9 +67,12 @@ class OrderItemInline(admin.TabularInline):  # ✅ Use `StackedInline` if you pr
     fields = ('product_image', 'product', 'quantity', 'price', 'created_at', 'updated_at')  # ✅ Fields to display
 
     def product_image(self, obj):
-        """ ✅ Display Product Image if Exists """
-        if obj.product and obj.product.img:  # ✅ Check if product and image exist
-            return format_html('<img src="{}" width="100" style="border-radius: 5px;" />', obj.product.img.url)
+        """ ✅ Display Base64 Product Image in Admin """
+        if obj.product and obj.product.img_64:  # ✅ Check if product has a Base64 image
+            return format_html(
+                '<img src="data:image/png;base64,{}" width="100" style="border-radius: 5px;" />',
+                obj.product.img_64
+            )
         return "No Image"
 
     product_image.short_description = "Product Image"

@@ -1,30 +1,40 @@
+import sys
+import base64
 import asyncio
 import logging
-import sys
 from os import getenv
+
+from aiogram.exceptions import TelegramBadRequest
 from dotenv import load_dotenv
 
-from aiogram import Bot, Dispatcher, F
-from aiogram.client.default import DefaultBotProperties
-from aiogram.enums import ParseMode
-from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery
+from sqlalchemy.sql import func
 
-from commons.products import get_product_detail_template, get_order_items_template, get_order_confirm_template, \
-    get_order_items_detail_template
-from keyboards.inline.language import get_quantity_keyboard, get_quantity_and_remove_keyboard, get_order_items_keyboard, \
-    get_confirmation_emojis, get_confirmation_location, get_order_confirmation_phone, get_confirm_order_keyboard
-from keyboards.markup.language import get_main_menu, language_markup, get_phone_markup, \
-    get_products_keyboard, get_search_keyboard, get_location_markup, get_orders_keyboard, get_order_detail_keyboard
+from aiogram.enums import ParseMode
+from aiogram import Bot, Dispatcher, F
+from aiogram.filters import CommandStart
+from aiogram.fsm.context import FSMContext
+from aiogram.client.default import DefaultBotProperties
+from aiogram.types import Message, CallbackQuery, BufferedInputFile
+
+from commons.states import UserState
+from commons.products import (
+    get_product_detail_template, get_order_items_template, get_order_confirm_template, get_order_items_detail_template
+)
+from keyboards.inline.language import (
+    get_quantity_keyboard, get_order_items_keyboard, get_confirmation_emojis, get_confirm_order_keyboard
+)
+from keyboards.markup.language import (
+    get_main_menu, language_markup, get_phone_markup, get_products_keyboard, get_search_keyboard,
+    get_orders_keyboard, get_order_detail_keyboard
+)
 from commons.dictionary import DICTIONARY
 from commons.constants import UZBEK_LANG, RUSSIAN_LANG, PHONE, LOCATION, ORDERED_ORDER_STATUS
 from db.setup import init_db, get_db_session
-from db.queries import get_client, create_client, fetch_or_create_client, get_product, get_product_by_id, \
-    fetch_or_create_order, update_or_create_order_item, get_order_item, get_order_items, get_order, \
-    mass_delete_order_items, get_orders, get_ordered_orders, get_order_items_by_order_id, get_order_by_id_exclude_new
-from sqlalchemy.sql import func
-from aiogram.fsm.context import FSMContext
-from commons.states import UserState
+from db.queries import (
+    get_client, create_client, fetch_or_create_client, get_product, get_product_by_id, fetch_or_create_order,
+    update_or_create_order_item, get_order_item, get_order_items, get_order, mass_delete_order_items,
+    get_ordered_orders, get_order_items_by_order_id, get_order_by_id_exclude_new
+)
 
 
 load_dotenv()
@@ -193,18 +203,42 @@ async def handle_cart_page_messages(message: Message, state: FSMContext):
 # Product detail
 @dp.message(F.text.startswith('💊 - '))
 async def handle_product_detail(message: Message, state: FSMContext):
+    order_item = None
+    # Fetch product data from the database or cache
+
     async for session in get_db_session():
         client = await get_client(session, message.from_user.id)
         product = await get_product(session, client.lang, message.text)
         if not product:
             return
         order_item = await get_order_item(session, product['id'], client.id)
-        quantity = 1
-        if order_item:
-            quantity = int(order_item.quantity)
-            await state.update_data({f"quantity_{product['id']}": quantity})
+
+    # Retrieve the current quantity from the state
+    data = await state.get_data()
+    quantity = int(data.get(f"quantity_{client.id}_{product['id']}", 1))
+    if order_item:
+        if order_item.quantity:
+            if int(order_item.quantity) > quantity:
+                quantity = int(order_item.quantity)
+                await state.update_data({f"quantity_{client.id}_{product['id']}": quantity})
+
+    if product.get('img_64'):
+        image_data = base64.b64decode(product["img_64"])  # Decode Base64
+        image_file = BufferedInputFile(file=image_data, filename="image.png")
+
+        await message.answer_photo(
+            photo=image_file,
+            caption=get_product_detail_template(
+                product['name'], product['desc'], product['price'], quantity, client.lang
+            ),
+            reply_markup=get_quantity_keyboard(product['id'], quantity, client.lang),
+            parse_mode="HTML"
+        )
+    else:
         await message.answer(
-            text=get_product_detail_template(product['name'], product['desc'], product['price'], quantity, client.lang),
+            text=get_product_detail_template(
+                product['name'], product['desc'], product['price'], quantity, client.lang
+            ),
             reply_markup=get_quantity_keyboard(product['id'], quantity, client.lang)
         )
 
@@ -330,7 +364,6 @@ async def handler_confirmed_cleaning_cart(callback_query: CallbackQuery):
 @dp.callback_query(F.data.startswith("order_item_decrease_") | F.data.startswith("order_item_increase_"))
 async def change_quantity_handler(callback_query: CallbackQuery):
     product_id = int(callback_query.data.split("_")[-1])
-    # Fetch product data from the database or cache
     async for session in get_db_session():
         client = await get_client(session, callback_query.from_user.id)
         product = await get_product_by_id(session, product_id, client.lang)
@@ -365,19 +398,23 @@ async def change_quantity_handler(callback_query: CallbackQuery):
 async def change_quantity_handler(callback_query: CallbackQuery, state: FSMContext):
     product_id = int(callback_query.data.split("_")[1])
     product = None
-
+    order_item = None
     # Fetch product data from the database or cache
     async for session in get_db_session():
         client = await get_client(session, callback_query.from_user.id)
         product = await get_product_by_id(session, product_id, client.lang)
-
+        order_item = await get_order_item(session, product['id'], client.id)
         if not product:
             await callback_query.answer(DICTIONARY['14'][client.lang], show_alert=True)
             return
 
-        # Retrieve the current quantity from the state
-        data = await state.get_data()
-        quantity = data.get(f"quantity_{client.id}_{product_id}", 1)
+    # Retrieve the current quantity from the state
+    data = await state.get_data()
+    quantity = int(data.get(f"quantity_{client.id}_{product_id}", 1))
+    if order_item:
+        if order_item.quantity:
+            if int(order_item.quantity) > quantity:
+                quantity = order_item.quantity
 
     # Increase or decrease quantity
     if callback_query.data.startswith("increase_"):
@@ -389,11 +426,26 @@ async def change_quantity_handler(callback_query: CallbackQuery, state: FSMConte
     await state.update_data({f"quantity_{client.id}_{product_id}": quantity})
 
     # Update the message with the new quantity
-    await callback_query.message.edit_text(
-        text=get_product_detail_template(product['name'], product['desc'], product['price'], quantity, client.lang),
-        reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
-        parse_mode="HTML"
-    )
+    try:
+        if callback_query.message.content_type == "text":
+            await callback_query.message.edit_text(
+                text=get_product_detail_template(product['name'], product['desc'], product['price'], quantity, client.lang),
+                reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
+                parse_mode="HTML"
+            )
+        elif callback_query.message.content_type in ["photo", "document"]:
+            await callback_query.message.edit_caption(
+                caption=get_product_detail_template(product['name'], product['desc'], product['price'], quantity, client.lang),
+                reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
+                parse_mode="HTML"
+            )
+    except TelegramBadRequest as e:
+        if "message to edit" in str(e):
+            await callback_query.message.answer(
+                text=get_product_detail_template(product['name'], product['desc'], product['price'], quantity, client.lang),
+                reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
+                parse_mode="HTML"
+            )
 
 
 # Add to cart
@@ -416,15 +468,35 @@ async def add_to_cart_handler(callback_query: CallbackQuery, state: FSMContext):
             return
         quantity = data.get(f"quantity_{client.id}_{product_id}", 1)
         await update_or_create_order_item(session, order.id, quantity, product_id, product['price'])
-        markup = await get_products_keyboard(session, client.lang)
+        # markup = await get_products_keyboard(session, client.lang)
 
-    # ✅ Check if message exists before editing
-    if callback_query.message:
-        await callback_query.message.edit_text(
-            text=DICTIONARY['15'][client.lang],
-            reply_markup=None  # Remove keyboard
-        )
-    await callback_query.answer(text=DICTIONARY['10'][client.lang], reply_markup=markup)
+    try:
+        if callback_query.message.content_type == "text":
+            await callback_query.message.edit_text(
+                text=get_product_detail_template(product['name'], product['desc'], product['price'], quantity,
+                                                 client.lang),
+                reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
+                parse_mode="HTML"
+            )
+        elif callback_query.message.content_type in ["photo", "document"]:
+            await callback_query.message.edit_caption(
+                caption=get_product_detail_template(product['name'], product['desc'], product['price'], quantity,
+                                                    client.lang),
+                reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
+                parse_mode="HTML"
+            )
+    except TelegramBadRequest as e:
+        if "message to edit" in str(e):
+            await callback_query.message.answer(
+                text=get_product_detail_template(product['name'], product['desc'], product['price'], quantity,
+                                                 client.lang),
+                reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
+                parse_mode="HTML"
+            )
+
+    await callback_query.message.answer(
+        text=DICTIONARY['15'][client.lang],
+    )
 
 
 # Update order phone

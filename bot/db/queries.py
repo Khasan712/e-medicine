@@ -76,7 +76,7 @@ async def get_product_by_id(session: AsyncSession, product_id, lang):
                 'price': product.price,
                 'desc': product.desc_uz,
                 'measure': product.measure.name_uz,
-                'img': product.img
+                'img_64': product.img_64
             }
             return data
         else:
@@ -86,7 +86,7 @@ async def get_product_by_id(session: AsyncSession, product_id, lang):
                 'price': product.price,
                 'desc': product.desc_ru,
                 'measure': product.measure.name_ru,
-                'img': product.img
+                'img_64': product.img_64
             }
     return None
 
@@ -112,7 +112,7 @@ async def get_product(session: AsyncSession, lang, name: str):
                 'price': product.price,
                 'desc': product.desc_uz,
                 'measure': product.measure.name_uz,
-                'img': product.img
+                'img_64': product.img_64
             }
             return data
         else:
@@ -122,7 +122,7 @@ async def get_product(session: AsyncSession, lang, name: str):
                 'price': product.price,
                 'desc': product.desc_ru,
                 'measure': product.measure.name_ru,
-                'img': product.img
+                'img_64': product.img_64
             }
     return None
 

@@ -49,6 +49,7 @@ class Product(Base):
     price = Column(String(255), nullable=False)  # Consider using Decimal for price
     desc_uz = Column(Text, nullable=True)
     desc_ru = Column(Text, nullable=True)
+    img_64 = Column(Text, nullable=True)
 
     measure_id = Column(Integer, ForeignKey("app_descriptions.id", ondelete="SET NULL"), nullable=True)
     measure = relationship("Descriptions", back_populates="products")
