@@ -39,6 +39,7 @@ def get_main_menu(lang):
             ],
             [
                 KeyboardButton(text=DICTIONARY['7'][lang]),
+                KeyboardButton(text=DICTIONARY['36'][lang]),
             ]
         ],
         resize_keyboard=True,

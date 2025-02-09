@@ -1,19 +1,19 @@
 services:
-  app:
-    build:
-      context: .
-    container_name: "e_medicine_app"
-    restart: always
-    command: bash entrypoint.sh
-    volumes:
-      - .:/app
-      - ./media:/app/media
-    env_file:
-      - .env
-    depends_on:
-      - db
-    ports:
-      - 9092:9092
+#  app:
+#    build:
+#      context: .
+#    container_name: "e_medicine_app"
+#    restart: always
+#    command: bash entrypoint.sh
+#    volumes:
+#      - .:/app
+#      - ./media:/app/media
+#    env_file:
+#      - .env
+#    depends_on:
+#      - db
+#    ports:
+#      - 9092:9092
 
   db:
     image: postgres:16

@@ -150,5 +150,13 @@ DICTIONARY = {
         UZBEK_LANG: "❌ Buyurtma topilmadi",
         RUSSIAN_LANG: "❌ Заказ не найден",
     },
+    '36': {
+        UZBEK_LANG: "🌍 Til",
+        RUSSIAN_LANG: "🌍 Язык",
+    },
+    '37': {
+        UZBEK_LANG: "Kerakli tilni tanlang.",
+        RUSSIAN_LANG: "Выберите необходимый язык.",
+    },
 
 }

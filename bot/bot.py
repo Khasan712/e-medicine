@@ -85,8 +85,10 @@ async def language_handler(message: Message) -> None:
                 tg_nick=message.from_user.username,
                 lang=lang
             )
-
-    await message.answer(text=DICTIONARY['4'][lang], reply_markup=get_phone_markup())
+    if not client.tg_phone:
+        await message.answer(text=DICTIONARY['4'][lang], reply_markup=get_phone_markup())
+    else:
+        await message.answer(text=DICTIONARY['8'][client.lang], reply_markup=get_main_menu(client.lang))
 
 
 # asking phone number
@@ -103,6 +105,17 @@ async def phone_number_handler(message: Message) -> None:
         client.updated_at = func.now()
         await session.commit()
         await message.answer(text=DICTIONARY['8'][client.lang], reply_markup=get_main_menu(client.lang))
+
+
+# Update language
+@dp.message(F.text.in_([DICTIONARY['36'][UZBEK_LANG], DICTIONARY['36'][RUSSIAN_LANG]]))
+async def handler_go_back(message: Message) -> None:
+    async for session in get_db_session():
+        client = await get_client(session, message.from_user.id)
+    await message.answer(
+        text=f"{DICTIONARY['37'][client.lang]}",
+        reply_markup=language_markup()
+    )
 
 
 # go back
