@@ -1,5 +1,4 @@
 import base64
-from io import BytesIO
 from django.db import models
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
@@ -12,7 +11,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(max_length=100, blank=True, null=True)
     last_name = models.CharField(max_length=100, blank=True, null=True)
     phone_number = models.CharField(max_length=100, unique=True)
-    role = models.CharField(max_length=6, choices=UserRole.choices())
+    role = models.CharField(max_length=10, choices=UserRole.choices())
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     is_deleted = models.BooleanField(default=False)

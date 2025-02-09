@@ -3,8 +3,7 @@ from enum import Enum
 
 class UserRole(Enum):
     admin = 'admin'
-    client = 'client'
-    seller = 'seller'
+    manager = 'manager'
 
     @classmethod
     def choices(cls):

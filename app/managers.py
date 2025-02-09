@@ -13,7 +13,8 @@ class CustomManager(BaseUserManager):
             raise ValueError("User must have role")
         if not password:
             raise ValueError("User must have password")
-        
+
+        extra_fields.setdefault('is_stuff', True)
         user = self.model(
             phone_number=phone_number,
             role=role,
@@ -22,7 +23,7 @@ class CustomManager(BaseUserManager):
         user.set_password(password)
         user.save(using=self._db)
         return user
-    
+
     def create_superuser(self, phone_number, role, password, **extra_fields):
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)

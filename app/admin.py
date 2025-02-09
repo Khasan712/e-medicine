@@ -1,13 +1,55 @@
 from django.contrib import admin
-
-from .forms import ProductAdminForm
+from django.contrib.auth.models import Group
+from django.contrib.auth.admin import UserAdmin
+from .forms import ProductAdminForm, CustomUserCreationForm, CustomUserChangeForm
 from .models import User, Product, Descriptions, Client, Order, OrderItem
 from django.utils.html import format_html
 
 
-@admin.register(User)
-class UserAdmin(admin.ModelAdmin):
-    list_display = ("id", 'first_name', 'last_name', 'phone_number', 'role', 'is_active')
+# @admin.register(User)
+# class UserAdmin(admin.ModelAdmin):
+#     list_display = ("id", 'first_name', 'last_name', 'phone_number', 'role', 'is_active')
+
+class CustomUserAdmin(UserAdmin):
+    """ ✅ Custom User Admin - Only Admins Can Manage Users """
+    add_form = CustomUserCreationForm  # ✅ Form for adding users
+    form = CustomUserChangeForm  # ✅ Form for updating users
+    model = User
+
+    list_display = ("id", "phone_number", "first_name", "last_name", "role", "is_active", "is_staff", "is_confirmed", "created_at")
+    list_filter = ("is_active", "is_staff", "role", "is_confirmed")
+
+    fieldsets = (
+        ("Personal Info", {"fields": ("phone_number", "first_name", "last_name", "role")}),
+        ("Permissions", {"fields": ("is_active", "is_staff", "is_deleted", "is_confirmed")}),
+        ("Important Dates", {"fields": ("created_at", "updated_at")}),
+    )
+
+    add_fieldsets = (
+        ("User Info", {
+            "classes": ("wide",),
+            "fields": ("phone_number", "first_name", "last_name", "role", "password1", "password2"),
+        }),
+    )
+
+    search_fields = ("phone_number", "first_name", "last_name")
+    ordering = ("id",)
+    readonly_fields = ("created_at", "updated_at")  # ✅ Make these fields read-only
+
+    # ✅ Restrict Add Permission - Only Admins Can Add Users
+    def has_add_permission(self, request):
+        return request.user.is_authenticated and request.user.role == "admin"
+
+    # ✅ Restrict Change Permission - Only Admins Can Modify Users
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_authenticated and request.user.role == "admin"
+
+    # ✅ Restrict Delete Permission - Only Admins Can Delete Users
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_authenticated and request.user.role == "admin"
+
+
+admin.site.register(User, CustomUserAdmin)
 
 
 @admin.register(Product)
@@ -18,6 +60,22 @@ class ProductAdmin(admin.ModelAdmin):
     exclude = ('img_64',)
     list_display_links = ("id", 'name_uz', 'name_ru')
     list_filter = ('measure',)
+
+    def has_module_permission(self, request):
+        """ ✅ Admins and Managers Can See This """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_change_permission(self, request, obj=None):
+        """ ✅ Allow Managers to Edit Products """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_add_permission(self, request):
+        """ ✅ Allow Managers to Add Products """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_delete_permission(self, request, obj=None):
+        """ ✅ Allow Only Admins to Delete Products """
+        return request.user.is_authenticated and request.user.role == "admin"
 
     def measure_uz(self, obj):
         try:
@@ -51,10 +109,42 @@ class ProductAdmin(admin.ModelAdmin):
 class DescriptionsAdmin(admin.ModelAdmin):
     list_display = ("id", 'name_uz', 'name_ru', 'created_at')
 
+    def has_module_permission(self, request):
+        """ ✅ Admins and Managers Can See This """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_change_permission(self, request, obj=None):
+        """ ✅ Allow Managers to Edit Products """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_add_permission(self, request):
+        """ ✅ Allow Managers to Add Products """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_delete_permission(self, request, obj=None):
+        """ ✅ Allow Only Admins to Delete Products """
+        return request.user.is_authenticated and request.user.role == "admin"
+
 
 @admin.register(Client)
 class ClientAdmin(admin.ModelAdmin):
     list_display = ("id", 'first_name', 'last_name', 'tg_phone', 'tg_nick', 'created_at', 'updated_at')
+
+    def has_module_permission(self, request):
+        """ ✅ Admins and Managers Can See This """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_change_permission(self, request, obj=None):
+        """ ✅ Allow Managers to Edit Products """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_add_permission(self, request):
+        """ ✅ Allow Managers to Add Products """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_delete_permission(self, request, obj=None):
+        """ ✅ Allow Only Admins to Delete Products """
+        return request.user.is_authenticated and request.user.role == "admin"
 
 
 class OrderItemInline(admin.TabularInline):  # ✅ Use `StackedInline` if you prefer
@@ -101,6 +191,22 @@ class OrderAdmin(admin.ModelAdmin):
 
     inlines = [OrderItemInline]  # ✅ OrderItems Inline
 
+    def has_module_permission(self, request):
+        """ ✅ Admins and Managers Can See This """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_change_permission(self, request, obj=None):
+        """ ✅ Allow Managers to Edit Products """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_add_permission(self, request):
+        """ ✅ Allow Managers to Add Products """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_delete_permission(self, request, obj=None):
+        """ ✅ Allow Only Admins to Delete Products """
+        return request.user.is_authenticated and request.user.role == "admin"
+
     def client_info(self, obj):
         """ ✅ Display Client Info Inside Order Page (Properly Rendered) """
         if not obj.client:
@@ -121,8 +227,5 @@ class OrderAdmin(admin.ModelAdmin):
     client_info.short_description = "Client Info"  # ✅ Custom label
 
 
-# @admin.register(OrderItem)
-# class OrderItemAdmin(admin.ModelAdmin):
-#     list_display = ("id", 'order', 'product', 'quantity', 'price', 'created_at', 'updated_at')
-#
-#
+# ✅ Remove default Groups (if not used)
+admin.site.unregister(Group)
