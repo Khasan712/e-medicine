@@ -28,7 +28,7 @@ from keyboards.markup.language import (
     get_orders_keyboard, get_order_detail_keyboard
 )
 from commons.dictionary import DICTIONARY
-from commons.constants import UZBEK_LANG, RUSSIAN_LANG, PHONE, LOCATION, ORDERED_ORDER_STATUS
+from commons.constants import UZBEK_LANG, RUSSIAN_LANG, PHONE, LOCATION, ORDERED_ORDER_STATUS, FIRST_NAME
 from db.setup import init_db, get_db_session
 from db.queries import (
     get_client, create_client, fetch_or_create_client, get_product, get_product_by_id, fetch_or_create_order,
@@ -155,7 +155,7 @@ async def handler_my_orders(message: Message, state: FSMContext) -> None:
 async def handler_my_orders(message: Message, state: FSMContext) -> None:
     order_id = None
     try:
-        order_id = message.text.split()[1]
+        order_id = int(message.text.split()[1])
     except Exception as e:
         print(str(e))
     if not order_id:
@@ -171,8 +171,8 @@ async def handler_my_orders(message: Message, state: FSMContext) -> None:
             await message.answer(text=DICTIONARY['35'][client.lang], reply_markup=markup)
         else:
             text = get_order_items_detail_template(order_items, client.lang, order)
-            await message.answer(text=DICTIONARY['25'][client.lang])
-            await message.answer(text=text, reply_markup=markup)
+            await message.answer(text=text)
+            # await message.answer(text=text, reply_markup=markup)
 
 
 # Products list handler
@@ -256,11 +256,10 @@ async def handle_product_detail(message: Message, state: FSMContext):
         )
 
 
-# update phone or location
+# update first_name, phone or location
 @dp.callback_query(F.data.startswith('edit_order_'))
 async def handle_location_or_phone(callback_query: CallbackQuery, state: FSMContext):
     action = callback_query.data.split('_')[-1]  # ✅ Use `callback_query.data` instead of `F.data`
-    print("Action detected:", action)
 
     if action == PHONE:
         async for session in get_db_session():
@@ -276,6 +275,13 @@ async def handle_location_or_phone(callback_query: CallbackQuery, state: FSMCont
             text=DICTIONARY['29'][client.lang], reply_markup=None
         )
         await state.set_state(UserState.order_update_location)
+    elif action == FIRST_NAME:
+        async for session in get_db_session():
+            client = await get_client(session, callback_query.from_user.id)
+        await callback_query.message.edit_text(
+            text=DICTIONARY['40'][client.lang], reply_markup=None
+        )
+        await state.set_state(UserState.order_update_first_name)
 
 
 # confirmation ordering
@@ -300,6 +306,11 @@ async def handler_confirm_order(callback_query: CallbackQuery, state: FSMContext
         order = await get_order(session, client.id)
         if not order:
             return
+        elif not client.first_name:
+            await callback_query.message.edit_text(
+                text=DICTIONARY['40'][client.lang], reply_markup=None
+            )
+            await state.set_state(UserState.order_update_first_name)
         elif not order.phone:
             await callback_query.message.edit_text(
                 text=DICTIONARY['28'][client.lang], reply_markup=None
@@ -481,7 +492,6 @@ async def add_to_cart_handler(callback_query: CallbackQuery, state: FSMContext):
             return
         quantity = data.get(f"quantity_{client.id}_{product_id}", 1)
         await update_or_create_order_item(session, order.id, quantity, product_id, product['price'])
-        # markup = await get_products_keyboard(session, client.lang)
 
     try:
         if callback_query.message.content_type == "text":
@@ -510,6 +520,27 @@ async def add_to_cart_handler(callback_query: CallbackQuery, state: FSMContext):
     await callback_query.message.answer(
         text=DICTIONARY['15'][client.lang],
     )
+
+
+# Update order client first_name
+@dp.message(UserState.order_update_first_name)
+async def handle_search_product_messages(message: Message, state: FSMContext):
+    async for session in get_db_session():
+        client = await get_client(session, message.from_user.id)
+        order = await get_order(session, client.id)
+        if not order:
+            return
+        client.first_name = message.text
+        await session.commit()
+
+        order_items = await get_order_items(session, client.id)
+        if not order_items:
+            return
+        await message.answer(
+            text=get_order_confirm_template(order_items, client),
+            reply_markup=get_confirm_order_keyboard(client)
+        )
+        await state.set_state(UserState.main_menu)
 
 
 # Update order phone
@@ -578,12 +609,11 @@ async def handle_search_product_messages(message: Message, state: FSMContext):
 
 # User search products
 @dp.message(UserState.search)
-async def handle_search_product_messages(message: Message, state: FSMContext):
+async def handle_search_product_messages(message: Message):
     async for session in get_db_session():
         client = await get_client(session, message.from_user.id)
         markup = await get_products_keyboard(session, client.lang, message.text)
         await message.answer(text=DICTIONARY['10'][client.lang], reply_markup=markup)
-        # await state.set_state(UserState.products)
 
 
 async def main() -> None:

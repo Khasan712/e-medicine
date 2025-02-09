@@ -27,10 +27,11 @@ class LanguageEnum(Enum):
 
 
 class OrderEnum(Enum):
-    new = 'new'
     ordered = 'ordered'
-    rejected = 'rejected'
+    on_the_way = 'on_the_way'
     completed = 'completed'
+    rejected = 'rejected'
+    new = 'new'
 
     @classmethod
     def choices(cls):

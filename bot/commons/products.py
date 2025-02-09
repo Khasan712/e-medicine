@@ -82,9 +82,16 @@ def get_order_confirm_template(order_items, client):
             total += int(item_total)
     if client.lang == UZBEK_LANG:
         text += f"\n\n💵 Umumiy: {total} UZS\n\n"
-    else:
+    elif client.lang == RUSSIAN_LANG:
         text += f"\n\n💵 Общая сумма: {total} UZS\n\n"
-    text += f"{DICTIONARY['24'][client.lang]}: {client.phone}\n"
+    if client.first_name:
+        text += f"{DICTIONARY['39'][client.lang]}: {client.first_name}\n"
+    else:
+        text += f"{DICTIONARY['40'][client.lang]}\n"
+    if client.phone:
+        text += f"{DICTIONARY['24'][client.lang]}: {client.phone}\n"
+    else:
+        text += f"{DICTIONARY['28'][client.lang]}\n"
     if client.location:
         text += f"📍:  {client.location}"
     else:

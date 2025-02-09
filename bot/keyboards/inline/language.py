@@ -86,6 +86,9 @@ def get_order_confirmation_phone():
 def get_confirm_order_keyboard(client):
     inline_keyboards = [
         [
+            InlineKeyboardButton(text=DICTIONARY['38'][client.lang], callback_data=f"edit_order_firstname"),
+        ],
+        [
             InlineKeyboardButton(text=DICTIONARY['26'][client.lang], callback_data=f"edit_order_phone"),
         ],
         [

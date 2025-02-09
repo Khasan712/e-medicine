@@ -1,4 +1,4 @@
-from commons.constants import UZBEK_LANG, RUSSIAN_LANG, ORDERED_ORDER_STATUS, REJECTED_ORDER_STATUS, COMPLETED_ORDER_STATUS
+from commons.constants import UZBEK_LANG, RUSSIAN_LANG, ORDERED_ORDER_STATUS, REJECTED_ORDER_STATUS, COMPLETED_ORDER_STATUS, ONT_THE_WAY_ORDER_STATUS
 
 
 DICTIONARY = {
@@ -95,12 +95,12 @@ DICTIONARY = {
         RUSSIAN_LANG: "📍 Отправить локацию.",
     },
     '24': {
-        UZBEK_LANG: "📞 Telefon raqam.",
-        RUSSIAN_LANG: "📞 Номер телефона.",
+        UZBEK_LANG: "📞 Telefon raqam",
+        RUSSIAN_LANG: "📞 Номер телефона",
     },
     '25': {
-        UZBEK_LANG: "✅ Buyurtma.",
-        RUSSIAN_LANG: "✅ Заказ.",
+        UZBEK_LANG: "✅ Buyurtma qilish",
+        RUSSIAN_LANG: "✅ Оформить заказ",
     },
     '26': {
         UZBEK_LANG: "🔄 Telefon raqamni o'zgartirish.",
@@ -111,8 +111,8 @@ DICTIONARY = {
         RUSSIAN_LANG: "🔄 Изменить локацию.",
     },
     '28': {
-        UZBEK_LANG: "📞 Yangi telefon raqam kiriting",
-        RUSSIAN_LANG: "📞 Введите новый номер телефона",
+        UZBEK_LANG: "📞 Telefon raqam kiriting",
+        RUSSIAN_LANG: "📞 Введите номер телефона",
     },
     '29': {
         UZBEK_LANG: "📍 Yangi lokatsiya kirting",
@@ -136,14 +136,16 @@ DICTIONARY = {
     },
     '34': {
         UZBEK_LANG: {
-            ORDERED_ORDER_STATUS: '⏳ Jarayonda',
+            ORDERED_ORDER_STATUS: '⏳ Buyurtma qabul qilindi',
             REJECTED_ORDER_STATUS: "❌ Bekor qilingan",
             COMPLETED_ORDER_STATUS: "✅ Yetkazilgan",
+            ONT_THE_WAY_ORDER_STATUS: "🚚 Yetkazilmoqda",
         },
         RUSSIAN_LANG: {
-            ORDERED_ORDER_STATUS: '⏳ В процессе',
+            ORDERED_ORDER_STATUS: '⏳ Заказ принят',
             REJECTED_ORDER_STATUS: "❌ Отменено",
             COMPLETED_ORDER_STATUS: "✅ Доставлено",
+            ONT_THE_WAY_ORDER_STATUS: "🚚 В пути",
         }
     },
     '35': {
@@ -157,6 +159,18 @@ DICTIONARY = {
     '37': {
         UZBEK_LANG: "Kerakli tilni tanlang.",
         RUSSIAN_LANG: "Выберите необходимый язык.",
+    },
+    '38': {
+        UZBEK_LANG: "🔄 Ismni o'zgartirish.",
+        RUSSIAN_LANG: "🔄 Изменить имя.",
+    },
+    '39': {
+        UZBEK_LANG: "🔤 Ism",
+        RUSSIAN_LANG: "🔤 Имя.",
+    },
+    '40': {
+        UZBEK_LANG: "📝 Ismingizni kiriting.",
+        RUSSIAN_LANG: "📝 Введите ваше имя.",
     },
 
 }

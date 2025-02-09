@@ -8,6 +8,7 @@ class UserState(StatesGroup):
     orders = State()
     search = State()
     cart = State()
+    order_update_first_name = State()
     order_update_location = State()
     order_update_phone = State()
     my_orders_detail = State()

@@ -15,6 +15,9 @@ class ProductAdmin(admin.ModelAdmin):
     form = ProductAdminForm
     list_display = ("id", 'name_uz', 'name_ru', 'price', 'measure_uz', 'measure_ru', 'created_at')
     readonly_fields = ('display_base64_image',)
+    exclude = ('img_64',)
+    list_display_links = ("id", 'name_uz', 'name_ru')
+    list_filter = ('measure',)
 
     def measure_uz(self, obj):
         try:
@@ -42,11 +45,6 @@ class ProductAdmin(admin.ModelAdmin):
         return "No Image"
 
     display_base64_image.short_description = "Product Image"
-
-    def get_fields(self, request, obj=None):
-        """ Show the Base64 image inside the product detail page """
-        fields = super().get_fields(request, obj)
-        return ('display_base64_image',) + tuple(fields)
 
 
 @admin.register(Descriptions)
@@ -88,6 +86,8 @@ class OrderItemInline(admin.TabularInline):  # ✅ Use `StackedInline` if you pr
 class OrderAdmin(admin.ModelAdmin):
     list_display = ("id", "client", "phone", "status", "created_at", "updated_at")
     readonly_fields = ("client_info", "phone", "location", "created_at", "updated_at")
+    list_display_links = ("id", "client", "phone")
+    list_filter = ('status',)
     fieldsets = (
         ("Order Details", {  # ✅ Order Info
             "fields": ("phone", "location", "status", "created_at", "updated_at")
@@ -121,8 +121,8 @@ class OrderAdmin(admin.ModelAdmin):
     client_info.short_description = "Client Info"  # ✅ Custom label
 
 
-@admin.register(OrderItem)
-class OrderItemAdmin(admin.ModelAdmin):
-    list_display = ("id", 'order', 'product', 'quantity', 'price', 'created_at', 'updated_at')
-
-
+# @admin.register(OrderItem)
+# class OrderItemAdmin(admin.ModelAdmin):
+#     list_display = ("id", 'order', 'product', 'quantity', 'price', 'created_at', 'updated_at')
+#
+#
