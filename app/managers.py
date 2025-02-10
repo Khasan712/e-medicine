@@ -14,7 +14,7 @@ class CustomManager(BaseUserManager):
         if not password:
             raise ValueError("User must have password")
 
-        extra_fields.setdefault('is_stuff', True)
+        extra_fields.setdefault('is_staff', True)
         user = self.model(
             phone_number=phone_number,
             role=role,
