@@ -16,7 +16,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.client.default import DefaultBotProperties
 from aiogram.types import Message, CallbackQuery, BufferedInputFile
 
-from commons.states import UserState
+from commons.states import UserState, clear_quantity_states
 from commons.products import (
     get_product_detail_template, get_order_items_template, get_order_confirm_template, get_order_items_detail_template
 )
@@ -25,7 +25,7 @@ from keyboards.inline.language import (
 )
 from keyboards.markup.language import (
     get_main_menu, language_markup, get_phone_markup, get_products_keyboard, get_search_keyboard,
-    get_orders_keyboard, get_order_detail_keyboard
+    get_orders_keyboard, get_order_detail_keyboard, get_categories_keyboard, get_search_result_keyboard
 )
 from commons.dictionary import DICTIONARY
 from commons.constants import UZBEK_LANG, RUSSIAN_LANG, PHONE, LOCATION, ORDERED_ORDER_STATUS, FIRST_NAME
@@ -120,10 +120,16 @@ async def handler_go_back(message: Message) -> None:
 
 # go back
 @dp.message(F.text.in_([DICTIONARY['9'][UZBEK_LANG], DICTIONARY['9'][RUSSIAN_LANG]]))
-async def handler_go_back(message: Message) -> None:
+async def handler_go_back(message: Message, state: FSMContext) -> None:
     async for session in get_db_session():
         client = await get_client(session, message.from_user.id)
-        await message.answer(text=DICTIONARY['8'][client.lang], reply_markup=get_main_menu(client.lang))
+        current_state = await state.get_state()
+        if current_state == UserState.category_selected:
+            markup = await get_categories_keyboard(session, client.lang)
+            await message.answer(text=DICTIONARY['41'][client.lang], reply_markup=markup)
+            await state.set_state(UserState.select_category)
+        else:
+            await message.answer(text=DICTIONARY['8'][client.lang], reply_markup=get_main_menu(client.lang))
 
 
 # Main menu handler
@@ -175,14 +181,14 @@ async def handler_my_orders(message: Message, state: FSMContext) -> None:
             # await message.answer(text=text, reply_markup=markup)
 
 
-# Products list handler
+# Category list handler
 @dp.message(F.text.in_([DICTIONARY['5'][UZBEK_LANG], DICTIONARY['5'][RUSSIAN_LANG]]))
 async def products_handler(message: Message, state: FSMContext) -> None:
     async for session in get_db_session():
         client = await get_client(session, message.from_user.id)
-        markup = await get_products_keyboard(session, client.lang)
-        await message.answer(text=DICTIONARY['10'][client.lang], reply_markup=markup)
-        await state.set_state(UserState.products)
+        markup = await get_categories_keyboard(session, client.lang)
+        await message.answer(text=DICTIONARY['41'][client.lang], reply_markup=markup)
+        await state.set_state(UserState.select_category)
 
 
 # Search button handler
@@ -242,7 +248,8 @@ async def handle_product_detail(message: Message, state: FSMContext):
         await message.answer_photo(
             photo=image_file,
             caption=get_product_detail_template(
-                product['name'], product['desc'], product['price'], quantity, client.lang
+                product['name'], product['desc'], product['price'], quantity, client.lang,
+                product['measure'], product['manufacturer']
             ),
             reply_markup=get_quantity_keyboard(product['id'], quantity, client.lang),
             parse_mode="HTML"
@@ -250,7 +257,8 @@ async def handle_product_detail(message: Message, state: FSMContext):
     else:
         await message.answer(
             text=get_product_detail_template(
-                product['name'], product['desc'], product['price'], quantity, client.lang
+                product['name'], product['desc'], product['price'], quantity, client.lang,
+                product['measure'], product['manufacturer']
             ),
             reply_markup=get_quantity_keyboard(product['id'], quantity, client.lang)
         )
@@ -332,6 +340,7 @@ async def handler_confirm_order(callback_query: CallbackQuery, state: FSMContext
                 text=DICTIONARY['8'][client.lang], reply_markup=get_main_menu(client.lang)
             )
             await state.set_state(UserState.main_menu)
+            await clear_quantity_states(state)
 
 
 # confirmation cleaning cart
@@ -453,20 +462,29 @@ async def change_quantity_handler(callback_query: CallbackQuery, state: FSMConte
     try:
         if callback_query.message.content_type == "text":
             await callback_query.message.edit_text(
-                text=get_product_detail_template(product['name'], product['desc'], product['price'], quantity, client.lang),
+                text=get_product_detail_template(
+                    product['name'], product['desc'], product['price'], quantity, client.lang,
+                    product['measure'], product['manufacturer']
+                ),
                 reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
                 parse_mode="HTML"
             )
         elif callback_query.message.content_type in ["photo", "document"]:
             await callback_query.message.edit_caption(
-                caption=get_product_detail_template(product['name'], product['desc'], product['price'], quantity, client.lang),
+                caption=get_product_detail_template(
+                    product['name'], product['desc'], product['price'], quantity, client.lang,
+                    product['measure'], product['manufacturer']
+                ),
                 reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
                 parse_mode="HTML"
             )
     except TelegramBadRequest as e:
         if "message to edit" in str(e):
             await callback_query.message.answer(
-                text=get_product_detail_template(product['name'], product['desc'], product['price'], quantity, client.lang),
+                text=get_product_detail_template(
+                    product['name'], product['desc'], product['price'], quantity, client.lang,
+                    product['measure'], product['manufacturer']
+                ),
                 reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
                 parse_mode="HTML"
             )
@@ -496,23 +514,29 @@ async def add_to_cart_handler(callback_query: CallbackQuery, state: FSMContext):
     try:
         if callback_query.message.content_type == "text":
             await callback_query.message.edit_text(
-                text=get_product_detail_template(product['name'], product['desc'], product['price'], quantity,
-                                                 client.lang),
+                text=get_product_detail_template(
+                    product['name'], product['desc'], product['price'], quantity, client.lang,
+                    product['measure'], product['manufacturer']
+                ),
                 reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
                 parse_mode="HTML"
             )
         elif callback_query.message.content_type in ["photo", "document"]:
             await callback_query.message.edit_caption(
-                caption=get_product_detail_template(product['name'], product['desc'], product['price'], quantity,
-                                                    client.lang),
+                caption=get_product_detail_template(
+                    product['name'], product['desc'], product['price'], quantity, client.lang,
+                    product['measure'], product['manufacturer']
+                ),
                 reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
                 parse_mode="HTML"
             )
     except TelegramBadRequest as e:
         if "message to edit" in str(e):
             await callback_query.message.answer(
-                text=get_product_detail_template(product['name'], product['desc'], product['price'], quantity,
-                                                 client.lang),
+                text=get_product_detail_template(
+                    product['name'], product['desc'], product['price'], quantity, client.lang,
+                    product['measure'], product['manufacturer']
+                ),
                 reply_markup=get_quantity_keyboard(product_id, quantity, client.lang),
                 parse_mode="HTML"
             )
@@ -524,7 +548,7 @@ async def add_to_cart_handler(callback_query: CallbackQuery, state: FSMContext):
 
 # Update order client first_name
 @dp.message(UserState.order_update_first_name)
-async def handle_search_product_messages(message: Message, state: FSMContext):
+async def handle_order_first_name_update(message: Message, state: FSMContext):
     async for session in get_db_session():
         client = await get_client(session, message.from_user.id)
         order = await get_order(session, client.id)
@@ -545,7 +569,7 @@ async def handle_search_product_messages(message: Message, state: FSMContext):
 
 # Update order phone
 @dp.message(UserState.order_update_phone)
-async def handle_search_product_messages(message: Message, state: FSMContext):
+async def handle_order_phone_update(message: Message, state: FSMContext):
     async for session in get_db_session():
         client = await get_client(session, message.from_user.id)
         order = await get_order(session, client.id)
@@ -567,7 +591,7 @@ async def handle_search_product_messages(message: Message, state: FSMContext):
 
 # Update order location
 @dp.message(UserState.order_update_location)
-async def handle_search_product_messages(message: Message, state: FSMContext):
+async def handle_order_location_update(message: Message, state: FSMContext):
     if message.location:
         latitude = str(message.location.latitude)
         longitude = str(message.location.longitude)
@@ -609,11 +633,22 @@ async def handle_search_product_messages(message: Message, state: FSMContext):
 
 # User search products
 @dp.message(UserState.search)
-async def handle_search_product_messages(message: Message):
+async def handle_search_product_messages(message: Message, state: FSMContext):
     async for session in get_db_session():
         client = await get_client(session, message.from_user.id)
-        markup = await get_products_keyboard(session, client.lang, message.text)
+        markup = await get_search_result_keyboard(session, client.lang, name=message.text)
         await message.answer(text=DICTIONARY['10'][client.lang], reply_markup=markup)
+
+
+# Display selected category products --- Product list
+@dp.message(UserState.select_category and F.text.contains('📂'))
+async def handle_selected_category(message: Message, state: FSMContext):
+    category = message.text.split('📂')[-1].strip()
+    async for session in get_db_session():
+        client = await get_client(session, message.from_user.id)
+        markup = await get_products_keyboard(session, client.lang, category=category)
+        await message.answer(text=DICTIONARY['10'][client.lang], reply_markup=markup)
+        await state.set_state(UserState.category_selected)
 
 
 async def main() -> None:

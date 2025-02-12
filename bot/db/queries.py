@@ -1,9 +1,9 @@
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
-from sqlalchemy.sql import func, or_
+from sqlalchemy.sql import func, or_, and_
 from sqlalchemy import delete
-from db.models import Client, Product, Descriptions, Order, OrderItem
+from db.models import Client, Product, Descriptions, Order, OrderItem, Category
 from db.setup import get_db_session
 from commons.constants import UZBEK_LANG, RUSSIAN_LANG, NEW_ORDER_STATUS
 
@@ -38,25 +38,55 @@ async def get_client(session: AsyncSession, tg_id):
     return result.scalars().first()
 
 
-async def get_products(session: AsyncSession, lang, name=None):
-    query = True
+async def get_products(session: AsyncSession, lang, name=None, category=None):
+    print(name, 'NAME')
+    print(category, 'CATEGORY')
+
+    filters = []  # ✅ Start with an empty list of filters
+
     if name:
         name = f"%{name.split('/')[0].strip()}%"
-        query = or_(
+        filters.append(or_(
             Product.name_uz.ilike(name),
             Product.name_ru.ilike(name),
             Product.desc_uz.ilike(name),
             Product.desc_ru.ilike(name)
-        )
+        ))
 
+    if category:
+        filters.append(or_(
+            Category.name_uz == category,
+            Category.name_ru == category
+        ))
+
+    print(filters, 'FILTERS')
     if lang == UZBEK_LANG:
         result = await session.execute(
-            select(Product.id, Product.name_uz, Product.name_ru).filter(query).order_by(Product.created_at.desc())
+            select(Product.id, Product.name_uz, Product.name_ru)
+            .outerjoin(Product.category)
+            .filter(and_(*filters))
+            .order_by(Product.created_at.desc())
         )
         return result.all()
     else:
         result = await session.execute(
-            select(Product.id, Product.name_uz, Product.name_ru).filter(query).order_by(Product.created_at.desc())
+            select(Product.id, Product.name_ru, Product.name_uz)
+            .outerjoin(Product.category)
+            .filter(and_(*filters))
+            .order_by(Product.created_at.desc())
+        )
+        return result.all()
+
+
+async def get_categories(session: AsyncSession, lang):
+    if lang == UZBEK_LANG:
+        result = await session.execute(
+            select(Category.id, Category.name_uz).order_by(Category.created_at.desc())
+        )
+        return result.all()
+    else:
+        result = await session.execute(
+            select(Category.id, Category.name_ru).order_by(Category.created_at.desc())
         )
         return result.all()
 
@@ -76,6 +106,7 @@ async def get_product_by_id(session: AsyncSession, product_id, lang):
                 'price': product.price,
                 'desc': product.desc_uz,
                 'measure': product.measure.name_uz,
+                'manufacturer': product.manufacturer_uz,
                 'img_64': product.img_64
             }
             return data
@@ -86,6 +117,7 @@ async def get_product_by_id(session: AsyncSession, product_id, lang):
                 'price': product.price,
                 'desc': product.desc_ru,
                 'measure': product.measure.name_ru,
+                'manufacturer': product.manufacturer_ru,
                 'img_64': product.img_64
             }
     return None
@@ -95,7 +127,7 @@ async def get_product(session: AsyncSession, lang, name: str):
     name = f"%{name.split('/')[0].split('-')[1].strip()}%"
     result = await session.execute(
         select(Product)
-        .options(joinedload(Product.measure))  # Explicitly join with the measure relationship
+        .options(joinedload(Product.measure), joinedload(Product.category))
         .filter(
             or_(
                 Product.name_uz.ilike(name),  # ✅ Case-insensitive search
@@ -106,15 +138,15 @@ async def get_product(session: AsyncSession, lang, name: str):
     product = result.scalars().first()
     if product:
         if lang == UZBEK_LANG:
-            data = {
+            return {
                 'id': product.id,
                 'name': product.name_uz,
                 'price': product.price,
                 'desc': product.desc_uz,
                 'measure': product.measure.name_uz,
+                'manufacturer': product.manufacturer_uz,
                 'img_64': product.img_64
             }
-            return data
         else:
             return {
                 'id': product.id,
@@ -122,6 +154,7 @@ async def get_product(session: AsyncSession, lang, name: str):
                 'price': product.price,
                 'desc': product.desc_ru,
                 'measure': product.measure.name_ru,
+                'manufacturer': product.manufacturer_ru,
                 'img_64': product.img_64
             }
     return None

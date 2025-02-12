@@ -17,7 +17,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_confirmed = models.BooleanField(default=False)
 
     USERNAME_FIELD = "phone_number"
     REQUIRED_FIELDS = ["role"]
@@ -38,15 +37,28 @@ class Descriptions(models.Model):
         return f'{self.name_uz}: {self.name_ru}'
 
 
+class Category(models.Model):
+    name_uz = models.CharField(max_length=100)
+    name_ru = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f'{self.name_uz}: {self.name_ru}'
+
+
 class Product(models.Model):
     img = models.ImageField(upload_to='products/')
     img_64 = models.TextField(blank=True, null=True)
     name_uz = models.CharField(max_length=255)
     name_ru = models.CharField(max_length=255)
     price = models.CharField(max_length=255)
+    manufacturer_uz = models.CharField(max_length=255, blank=True, null=True)
+    manufacturer_ru = models.CharField(max_length=255, blank=True, null=True)
     desc_uz = models.TextField()
     desc_ru = models.TextField()
     measure = models.ForeignKey(Descriptions, on_delete=models.DO_NOTHING)
+    category = models.ForeignKey(Category, on_delete=models.DO_NOTHING, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

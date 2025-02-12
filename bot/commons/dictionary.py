@@ -1,4 +1,7 @@
-from commons.constants import UZBEK_LANG, RUSSIAN_LANG, ORDERED_ORDER_STATUS, REJECTED_ORDER_STATUS, COMPLETED_ORDER_STATUS, ONT_THE_WAY_ORDER_STATUS
+from commons.constants import (
+    UZBEK_LANG, RUSSIAN_LANG, ORDERED_ORDER_STATUS, REJECTED_ORDER_STATUS,
+    COMPLETED_ORDER_STATUS, ONT_THE_WAY_ORDER_STATUS
+)
 
 
 DICTIONARY = {
@@ -171,6 +174,10 @@ DICTIONARY = {
     '40': {
         UZBEK_LANG: "📝 Ismingizni kiriting.",
         RUSSIAN_LANG: "📝 Введите ваше имя.",
+    },
+    '41': {
+        UZBEK_LANG: "📂 Kategoriyani tanlang.",
+        RUSSIAN_LANG: "📂 Выберите категорию.",
     },
 
 }

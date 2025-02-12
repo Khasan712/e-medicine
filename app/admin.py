@@ -2,13 +2,9 @@ from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
 from .forms import ProductAdminForm, CustomUserCreationForm, CustomUserChangeForm
-from .models import User, Product, Descriptions, Client, Order, OrderItem
+from .models import User, Product, Descriptions, Client, Order, OrderItem, Category
 from django.utils.html import format_html
 
-
-# @admin.register(User)
-# class UserAdmin(admin.ModelAdmin):
-#     list_display = ("id", 'first_name', 'last_name', 'phone_number', 'role', 'is_active')
 
 class CustomUserAdmin(UserAdmin):
     """ ✅ Custom User Admin - Only Admins Can Manage Users """
@@ -16,8 +12,8 @@ class CustomUserAdmin(UserAdmin):
     form = CustomUserChangeForm  # ✅ Form for updating users
     model = User
 
-    list_display = ("id", "phone_number", "first_name", "last_name", "role", "is_active", "is_staff", "is_confirmed", "created_at")
-    list_filter = ("is_active", "is_staff", "role", "is_confirmed")
+    list_display = ("id", "phone_number", "first_name", "last_name", "role", "is_active", "is_staff", "created_at")
+    list_filter = ("is_active", "is_staff", "role")
 
     fieldsets = (
         ("Personal Info", {"fields": ("phone_number", "first_name", "last_name", "role")}),
@@ -111,6 +107,27 @@ class ProductAdmin(admin.ModelAdmin):
         return "No Image"
 
     display_base64_image.short_description = "Product Image"
+
+
+@admin.register(Category)
+class CategoryAdmin(admin.ModelAdmin):
+    list_display = ("id", 'name_uz', 'name_ru', 'created_at')
+
+    def has_module_permission(self, request):
+        """ ✅ Admins and Managers Can See This """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_change_permission(self, request, obj=None):
+        """ ✅ Allow Managers to Edit Products """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_add_permission(self, request):
+        """ ✅ Allow Managers to Add Products """
+        return request.user.is_authenticated and request.user.role in ["admin", "manager"]
+
+    def has_delete_permission(self, request, obj=None):
+        """ ✅ Allow Only Admins to Delete Products """
+        return request.user.is_authenticated and request.user.role == "admin"
 
 
 @admin.register(Descriptions)

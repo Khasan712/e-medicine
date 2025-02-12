@@ -39,6 +39,18 @@ class Descriptions(Base):  # ✅ Ensure this is defined before Product
     products = relationship("Product", back_populates="measure")
 
 
+class Category(Base):  # ✅ Ensure this is defined before Product
+    __tablename__ = "app_category"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name_uz = Column(String(255), nullable=False)
+    name_ru = Column(String(255), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    products = relationship("Product", back_populates="category")
+
+
 class Product(Base):
     __tablename__ = "app_product"
 
@@ -47,12 +59,18 @@ class Product(Base):
     name_uz = Column(String(255), nullable=False)
     name_ru = Column(String(255), nullable=False)
     price = Column(String(255), nullable=False)  # Consider using Decimal for price
+    manufacturer_uz = Column(String(255), nullable=True)
+    manufacturer_ru = Column(String(255), nullable=True)
     desc_uz = Column(Text, nullable=True)
     desc_ru = Column(Text, nullable=True)
     img_64 = Column(Text, nullable=True)
 
     measure_id = Column(Integer, ForeignKey("app_descriptions.id", ondelete="SET NULL"), nullable=True)
     measure = relationship("Descriptions", back_populates="products")
+
+    category_id = Column(Integer, ForeignKey("app_category.id", ondelete="SET NULL"), nullable=True)
+    category = relationship("Category", back_populates="products")
+
     order_item_products = relationship("OrderItem", back_populates="product")
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
