@@ -124,7 +124,7 @@ async def get_product_by_id(session: AsyncSession, product_id, lang):
 
 
 async def get_product(session: AsyncSession, lang, name: str):
-    name = f"%{name.split('/')[0].split('-')[1].strip()}%"
+    name = f"%{name.split('/')[0].split('💉 - ')[1].strip()}%"
     result = await session.execute(
         select(Product)
         .options(joinedload(Product.measure), joinedload(Product.category))

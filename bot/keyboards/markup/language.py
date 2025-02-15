@@ -93,7 +93,7 @@ async def get_search_result_keyboard(session, lang, name):
     products = await get_products(session, lang, name=name)
 
     # Generate product buttons (each product on a new row)
-    products_keyboard = [[KeyboardButton(text=f'💊 - {product[1]} / {product[2]}')] for product in products]
+    products_keyboard = [[KeyboardButton(text=f'💉 - {product[1]} / {product[2]}')] for product in products]
     return ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text=DICTIONARY['5'][lang])]
