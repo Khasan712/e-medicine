@@ -199,22 +199,28 @@ class OrderItemInline(admin.TabularInline):  # ✅ Use `StackedInline` if you pr
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
-    list_display = ("id", "client", "phone", "status", "created_at", "updated_at")
-    readonly_fields = ("client_info", "phone", "location", "created_at", "updated_at")
-    list_display_links = ("id", "client", "phone")
+    list_display = ("id", "phone", "status", "created_at", "updated_at")
+    readonly_fields = (
+        "client_first_name", "client_tg_phone", "client_tg_id",
+        "client_tg_nick", "phone", "location", "created_at", "updated_at"
+    )
+    list_display_links = ("id", "phone")
     list_filter = ('status',)
     fieldsets = (
         ("Order Details", {  # ✅ Order Info
             "fields": ("phone", "location", "status", "created_at", "updated_at")
         }),
 
-        ("Client Information", {  # ✅ Show Client Info First
-            "fields": ("client_info",)
+        ("Client Information", {
+            "fields": (
+                "client_first_name", "client_tg_phone", "client_tg_id",
+                "client_tg_nick"
+            )
         }),
 
     )
 
-    inlines = [OrderItemInline]  # ✅ OrderItems Inline
+    inlines = [OrderItemInline]
 
     def has_module_permission(self, request):
         """ ✅ Admins and Managers Can See This """
@@ -232,24 +238,60 @@ class OrderAdmin(admin.ModelAdmin):
         """ ✅ Allow Only Admins to Delete Products """
         return request.user.is_authenticated and request.user.role == "admin"
 
-    def client_info(self, obj):
-        """ ✅ Display Client Info Inside Order Page (Properly Rendered) """
+    def client_first_name(self, obj):
         if not obj.client:
             return "No Client Data"
 
         return format_html(
-            "<b>Name:</b> {} {}<br>"
-            "<b>Phone:</b> {}<br>"
-            "<b>Telegram ID:</b> {}<br>"
-            "<b>Telegram Nick:</b> {}<br>",
+            "<b>{}</b>",
             obj.client.first_name or "N/A",
-            obj.client.last_name or "N/A",
-            obj.client.phone or "N/A",
-            obj.client.tg_id or "N/A",
-            obj.client.tg_nick or "N/A"
         )
 
-    client_info.short_description = "Client Info"  # ✅ Custom label
+    client_first_name.short_description = "First name"
+
+    def client_phone(self, obj):
+        if not obj.client:
+            return "No Client Data"
+
+        return format_html(
+            "<b>{}</b>",
+            obj.client.phone or "N/A",
+        )
+
+    client_phone.short_description = "Phone"
+
+    def client_tg_phone(self, obj):
+        if not obj.client:
+            return "No Client Data"
+
+        return format_html(
+            "<b>{}</b>",
+            obj.client.tg_phone or "N/A",
+        )
+
+    client_tg_phone.short_description = "Telegram Phone"
+
+    def client_tg_id(self, obj):
+        if not obj.client:
+            return "No Client Data"
+
+        return format_html(
+            "<b>{}</b>",
+            obj.client.tg_id or "N/A",
+        )
+
+    client_tg_id.short_description = "Telegram Id"
+
+    def client_tg_nick(self, obj):
+        if not obj.client:
+            return "No Client Data"
+
+        return format_html(
+            "<b>{}</b>",
+            obj.client.tg_nick or "N/A",
+        )
+
+    client_tg_nick.short_description = "Telegram Nick"
 
 
 # ✅ Remove default Groups (if not used)

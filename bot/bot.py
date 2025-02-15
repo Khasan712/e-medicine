@@ -60,7 +60,7 @@ async def command_start_handler(message: Message) -> None:
         )
     elif not client.tg_phone:
         await message.answer(text=DICTIONARY['11'][client.lang])
-        await message.answer(text=DICTIONARY['4'][client.lang], reply_markup=get_phone_markup())
+        await message.answer(text=DICTIONARY['4'][client.lang], reply_markup=get_phone_markup(client.lang))
     else:
         await message.answer(text=DICTIONARY['11'][client.lang], reply_markup=get_main_menu(client.lang))
 
@@ -86,25 +86,49 @@ async def language_handler(message: Message) -> None:
                 lang=lang
             )
     if not client.tg_phone:
-        await message.answer(text=DICTIONARY['4'][lang], reply_markup=get_phone_markup())
+        await message.answer(text=DICTIONARY['4'][lang], reply_markup=get_phone_markup(client.lang))
     else:
         await message.answer(text=DICTIONARY['8'][client.lang], reply_markup=get_main_menu(client.lang))
 
 
 # asking phone number
 @dp.message(F.contact)
-async def phone_number_handler(message: Message) -> None:
+async def phone_number_handler(message: Message, state: FSMContext) -> None:
     if message.contact.user_id != message.from_user.id:
         await message.answer("❌ You must send your own phone number!")
         return
 
-    async for session in get_db_session():
-        client = await get_client(session, message.from_user.id)
-        client.phone = message.contact.phone_number
-        client.tg_phone = message.contact.phone_number
-        client.updated_at = func.now()
-        await session.commit()
-        await message.answer(text=DICTIONARY['8'][client.lang], reply_markup=get_main_menu(client.lang))
+    current_state = await state.get_state()
+    if current_state == UserState.order_update_phone:
+        async for session in get_db_session():
+            client = await get_client(session, message.from_user.id)
+            order = await get_order(session, client.id)
+            if not order:
+                return
+            client.phone = message.contact.phone_number
+            if not client.tg_phone:
+                client.tg_phone = message.contact.phone_number
+            order.phone = message.contact.phone_number
+            await session.commit()
+
+            order_items = await get_order_items(session, client.id)
+            if not order_items:
+                return
+            markup = await get_search_keyboard(client.lang)
+            await message.answer(text=DICTIONARY['43'][client.lang], reply_markup=markup)
+            await message.answer(
+                text=get_order_confirm_template(order_items, client),
+                reply_markup=get_confirm_order_keyboard(client)
+            )
+            await state.set_state(UserState.main_menu)
+    else:
+        async for session in get_db_session():
+            client = await get_client(session, message.from_user.id)
+            client.phone = message.contact.phone_number
+            client.tg_phone = message.contact.phone_number
+            client.updated_at = func.now()
+            await session.commit()
+            await message.answer(text=DICTIONARY['8'][client.lang], reply_markup=get_main_menu(client.lang))
 
 
 # Update language
@@ -220,7 +244,7 @@ async def handle_cart_page_messages(message: Message, state: FSMContext):
 
 
 # Product detail
-@dp.message(F.text.startswith('💊 - '))
+@dp.message(F.text.startswith('💉 - ') and F.text.contains('/'))
 async def handle_product_detail(message: Message, state: FSMContext):
     order_item = None
     # Fetch product data from the database or cache
@@ -272,8 +296,9 @@ async def handle_location_or_phone(callback_query: CallbackQuery, state: FSMCont
     if action == PHONE:
         async for session in get_db_session():
             client = await get_client(session, callback_query.from_user.id)
-        await callback_query.message.edit_text(
-            text=DICTIONARY['28'][client.lang], reply_markup=None
+        await callback_query.message.delete()
+        await callback_query.message.answer(
+            text=DICTIONARY['28'][client.lang], reply_markup=get_phone_markup(client.lang)
         )
         await state.set_state(UserState.order_update_phone)
     elif action == LOCATION:
@@ -320,8 +345,9 @@ async def handler_confirm_order(callback_query: CallbackQuery, state: FSMContext
             )
             await state.set_state(UserState.order_update_first_name)
         elif not order.phone:
-            await callback_query.message.edit_text(
-                text=DICTIONARY['28'][client.lang], reply_markup=None
+            await callback_query.message.delete()
+            await callback_query.message.answer(
+                text=DICTIONARY['28'][client.lang], reply_markup=get_phone_markup(client.lang)
             )
             await state.set_state(UserState.order_update_phone)
         elif not order.location:

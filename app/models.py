@@ -57,8 +57,8 @@ class Product(models.Model):
     manufacturer_ru = models.CharField(max_length=255, blank=True, null=True)
     desc_uz = models.TextField()
     desc_ru = models.TextField()
-    measure = models.ForeignKey(Descriptions, on_delete=models.DO_NOTHING)
-    category = models.ForeignKey(Category, on_delete=models.DO_NOTHING, blank=True, null=True)
+    measure = models.ForeignKey(Descriptions, on_delete=models.SET_NULL, null=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -98,7 +98,7 @@ class Client(models.Model):
 
 
 class Order(models.Model):
-    client = models.ForeignKey(Client, on_delete=models.DO_NOTHING)
+    client = models.ForeignKey(Client, on_delete=models.SET_NULL, null=True)
     status = models.CharField(max_length=100, choices=OrderEnum.choices())
     phone = models.CharField(max_length=100, blank=True, null=True)
     location = models.CharField(max_length=255, blank=True, null=True)
@@ -112,8 +112,8 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.DO_NOTHING)
-    product = models.ForeignKey(Product, on_delete=models.DO_NOTHING)
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True)
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     quantity = models.CharField(max_length=50, blank=True, null=True)
     price = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)

@@ -179,5 +179,13 @@ DICTIONARY = {
         UZBEK_LANG: "📂 Kategoriyani tanlang.",
         RUSSIAN_LANG: "📂 Выберите категорию.",
     },
+    '42': {
+        UZBEK_LANG: "📞 Telefon raqamini ulashish",
+        RUSSIAN_LANG: "📞 Поделиться номером телефона",
+    },
+    '43': {
+        UZBEK_LANG: "Telefon raqam o’zgartirildi ✅",
+        RUSSIAN_LANG: "Номер телефона изменен ✅",
+    },
 
 }

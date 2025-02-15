@@ -20,10 +20,18 @@ def language_markup():
     )
 
 
-def get_phone_markup():
+def get_phone_markup(lang=None):
+    if lang == RUSSIAN_LANG:
+        return ReplyKeyboardMarkup(
+            keyboard=[
+                [KeyboardButton(text=DICTIONARY['42'][lang], request_contact=True)]
+            ],
+            resize_keyboard=True,
+            one_time_keyboard=True
+        )
     return ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📞 Share phone number", request_contact=True)]
+            [KeyboardButton(text=DICTIONARY['42'][UZBEK_LANG], request_contact=True)]
         ],
         resize_keyboard=True,
         one_time_keyboard=True
@@ -65,7 +73,7 @@ async def get_products_keyboard(session, lang, name=None, category=None):
     products = await get_products(session, lang, name=name, category=category)
 
     # Generate product buttons (each product on a new row)
-    products_keyboard = [[KeyboardButton(text=f'💊 - {product[1]} / {product[2]}')] for product in products]
+    products_keyboard = [[KeyboardButton(text=f'💉 - {product[1]} / {product[2]}')] for product in products]
     if name:
         keyboard = [
             [KeyboardButton(text=DICTIONARY['9'][lang])]

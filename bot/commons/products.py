@@ -1,15 +1,16 @@
-from commons.constants import UZBEK_LANG, RUSSIAN_LANG
 import re
-from commons.dictionary import DICTIONARY
 import pytz
+from commons.dictionary import DICTIONARY
+from commons.utils import price_reformat_float, extract_price, get_total, format_price
+from commons.constants import UZBEK_LANG, RUSSIAN_LANG, UZS_CURRENCY
 
 TASHKENT_TZ = pytz.timezone("Asia/Tashkent")
 
 
 def get_product_detail_template(
-        name, desc, price, quantity, lang, measure=None, manufacturer=None
+        name, desc, price: str, quantity, lang, measure=None, manufacturer=None
 ):
-    price_int = int(re.sub(r"\D", "", price))
+    price_int = extract_price(price)
     cur = str(price).split()[-1]
     if cur.isdigit():
         cur = ''
@@ -22,7 +23,7 @@ def get_product_detail_template(
         if measure:
             text += f"\n📏 <b>{measure}</b>\n"
         text += f"\n💰 {price}\n"\
-                f"\n💵 Umumiy: {int(price_int) * quantity} {cur}"
+                f"\n💵 Umumiy: {get_total(price_int, quantity)} {cur}"
         return text
     else:
         text = f"🛍️ <b>{name}</b>\n"\
@@ -32,7 +33,7 @@ def get_product_detail_template(
         if measure:
             text += f"\n📏 <b>{measure}</b>\n"
         text += f"\n💰 {price}\n"\
-                f"\n💵 Общая сумма: {int(price_int) * quantity} {cur}"
+                f"\n💵 Общая сумма: {get_total(price_int, quantity)} {cur}"
         return text
 
 
@@ -42,7 +43,7 @@ def get_order_items_detail_template(order_items, lang, order):
     status = DICTIONARY['34'][lang][order.status]
     text = f"ID: {order.id} | {DICTIONARY['33'][lang]}: {status}\n\n"
     for order_item in order_items:
-        price = int(re.sub(r"\D", "", order_item.product.price))
+        price = extract_price(order_item.product.price)
         cur = str(order_item.product.price).split()[-1]
         if cur.isdigit():
             cur = ''
@@ -50,16 +51,16 @@ def get_order_items_detail_template(order_items, lang, order):
         item_total = price * quantity
 
         if lang == UZBEK_LANG:
-            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {item_total} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {cur}"
             total += int(item_total)
         else:
-            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {item_total} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {cur}"
             total += int(item_total)
     if lang == UZBEK_LANG:
-        text += f"\n\n💵 Umumiy: {total}\n" \
+        text += f"\n\n💵 Umumiy: {format_price(total)} {UZS_CURRENCY}\n" \
                 f"{DICTIONARY['32'][lang]}: {updated_time}"
     else:
-        text += f"\n\n💵 Общая сумма: {total}\n" \
+        text += f"\n\n💵 Общая сумма: {format_price(total)} {UZS_CURRENCY}\n" \
                 f"{DICTIONARY['32'][lang]}: {updated_time}"
     return text
 
@@ -68,20 +69,20 @@ def get_order_items_template(order_items, lang):
     text = ""
     total = 0
     for order_item in order_items:
-        price = int(re.sub(r"\D", "", order_item.product.price))
+        price = extract_price(order_item.product.price)
         quantity = int(order_item.quantity)
         item_total = price * quantity
         cur = str(order_item.product.price).split()[-1]
         if lang == UZBEK_LANG:
-            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {item_total} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {cur}"
             total += int(item_total)
         else:
-            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {item_total} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {cur}"
             total += int(item_total)
     if lang == UZBEK_LANG:
-        text += f"\n\n💵 Umumiy: {total}"
+        text += f"\n\n💵 Umumiy: {format_price(total)} {UZS_CURRENCY}"
     else:
-        text += f"\n\n💵 Общая сумма: {total}"
+        text += f"\n\n💵 Общая сумма: {format_price(total)} {UZS_CURRENCY}"
     return text
 
 
@@ -89,21 +90,21 @@ def get_order_confirm_template(order_items, client):
     text = ""
     total = 0
     for order_item in order_items:
-        price = int(re.sub(r"\D", "", order_item.product.price))
+        price = extract_price(order_item.product.price)
         quantity = int(order_item.quantity)
         item_total = price * quantity
         cur = str(order_item.product.price).split()[-1]
 
         if client.lang == UZBEK_LANG:
-            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {item_total} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {cur}"
             total += int(item_total)
         else:
-            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {item_total} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {cur}"
             total += int(item_total)
     if client.lang == UZBEK_LANG:
-        text += f"\n\n💵 Umumiy: {total}\n\n"
+        text += f"\n\n💵 Umumiy: {format_price(total)} {UZS_CURRENCY}\n\n"
     elif client.lang == RUSSIAN_LANG:
-        text += f"\n\n💵 Общая сумма: {total}\n\n"
+        text += f"\n\n💵 Общая сумма: {format_price(total)} {UZS_CURRENCY}\n\n"
     if client.first_name:
         text += f"{DICTIONARY['39'][client.lang]}: {client.first_name}\n"
     else:

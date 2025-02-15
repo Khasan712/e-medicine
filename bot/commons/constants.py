@@ -11,3 +11,5 @@ PHONE = 'phone'
 LOCATION = 'location'
 FIRST_NAME = 'firstname'
 
+UZS_CURRENCY = 'UZS'
+
