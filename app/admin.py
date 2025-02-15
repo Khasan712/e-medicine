@@ -5,6 +5,8 @@ from .forms import ProductAdminForm, CustomUserCreationForm, CustomUserChangeFor
 from .models import User, Product, Descriptions, Client, Order, OrderItem, Category
 from django.utils.html import format_html
 
+from .utils import extract_price, format_price
+
 
 class CustomUserAdmin(UserAdmin):
     """ ✅ Custom User Admin - Only Admins Can Manage Users """
@@ -176,8 +178,8 @@ class OrderItemInline(admin.TabularInline):  # ✅ Use `StackedInline` if you pr
     model = OrderItem
     extra = 0  # ✅ No empty extra fields
     can_delete = False  # ✅ Prevents deletion
-    readonly_fields = ('product_image', 'product', 'quantity', 'price', 'created_at', 'updated_at')  # ✅ All fields read-only
-    fields = ('product_image', 'product', 'quantity', 'price', 'created_at', 'updated_at')  # ✅ Fields to display
+    readonly_fields = ('product_image', 'product', 'quantity', 'price', 'total', 'created_at', 'updated_at')  # ✅ All fields read-only
+    fields = ('product_image', 'product', 'quantity', 'price', 'total', 'created_at', 'updated_at')  # ✅ Fields to display
 
     def product_image(self, obj):
         """ ✅ Display Base64 Product Image in Admin """
@@ -195,6 +197,18 @@ class OrderItemInline(admin.TabularInline):  # ✅ Use `StackedInline` if you pr
 
     def has_change_permission(self, request, obj=None):
         return False  # ✅ Prevent updating OrderItems
+
+    def total(self, obj):
+        if not obj.product:
+            return "No Product Data"
+        price = extract_price(obj.price)
+        cur = str(obj.price).split()[-1]
+        return format_html(
+            "{}",
+            f"{format_price(price * int(obj.quantity))} {cur}" or "N/A",
+        )
+
+    total.short_description = "Total"
 
 
 @admin.register(Order)
