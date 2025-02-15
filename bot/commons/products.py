@@ -11,9 +11,6 @@ def get_product_detail_template(
         name, desc, price: str, quantity, lang, measure=None, manufacturer=None
 ):
     price_int = extract_price(price)
-    cur = str(price).split()[-1]
-    if cur.isdigit():
-        cur = ''
 
     if lang == UZBEK_LANG:
         text = f"🛍️ <b>{name}</b>\n" \
@@ -23,7 +20,7 @@ def get_product_detail_template(
         if measure:
             text += f"\n📏 <b>{measure}</b>\n"
         text += f"\n💰 {price}\n"\
-                f"\n💵 Umumiy: {get_total(price_int, quantity)} {cur}"
+                f"\n💵 Umumiy: {get_total(price_int, quantity)} {UZS_CURRENCY}"
         return text
     else:
         text = f"🛍️ <b>{name}</b>\n"\
@@ -33,7 +30,7 @@ def get_product_detail_template(
         if measure:
             text += f"\n📏 <b>{measure}</b>\n"
         text += f"\n💰 {price}\n"\
-                f"\n💵 Общая сумма: {get_total(price_int, quantity)} {cur}"
+                f"\n💵 Общая сумма: {get_total(price_int, quantity)} {UZS_CURRENCY}"
         return text
 
 
@@ -44,17 +41,14 @@ def get_order_items_detail_template(order_items, lang, order):
     text = f"ID: {order.id} | {DICTIONARY['33'][lang]}: {status}\n\n"
     for order_item in order_items:
         price = extract_price(order_item.product.price)
-        cur = str(order_item.product.price).split()[-1]
-        if cur.isdigit():
-            cur = ''
         quantity = int(order_item.quantity)
         item_total = price * quantity
 
         if lang == UZBEK_LANG:
-            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
         else:
-            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
     if lang == UZBEK_LANG:
         text += f"\n\n💵 Umumiy: {format_price(total)} {UZS_CURRENCY}\n" \
@@ -72,12 +66,11 @@ def get_order_items_template(order_items, lang):
         price = extract_price(order_item.product.price)
         quantity = int(order_item.quantity)
         item_total = price * quantity
-        cur = str(order_item.product.price).split()[-1]
         if lang == UZBEK_LANG:
-            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
         else:
-            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
     if lang == UZBEK_LANG:
         text += f"\n\n💵 Umumiy: {format_price(total)} {UZS_CURRENCY}"
@@ -93,13 +86,12 @@ def get_order_confirm_template(order_items, client):
         price = extract_price(order_item.product.price)
         quantity = int(order_item.quantity)
         item_total = price * quantity
-        cur = str(order_item.product.price).split()[-1]
 
         if client.lang == UZBEK_LANG:
-            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
         else:
-            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {cur}"
+            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
     if client.lang == UZBEK_LANG:
         text += f"\n\n💵 Umumiy: {format_price(total)} {UZS_CURRENCY}\n\n"
