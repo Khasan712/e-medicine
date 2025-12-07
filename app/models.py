@@ -112,7 +112,7 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True)
+    order = models.ForeignKey(Order, on_delete=models.SET_NULL, null=True, related_name='order_items')
     product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
     quantity = models.CharField(max_length=50, blank=True, null=True)
     price = models.CharField(max_length=100, blank=True, null=True)

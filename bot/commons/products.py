@@ -13,17 +13,17 @@ def get_product_detail_template(
     price_int = extract_price(price)
 
     if lang == UZBEK_LANG:
-        text = f"🛍️ <b>{name}</b>\n" \
-               f"\n📄 <b>Ma'lumot:</b> {desc}\n"
-        if manufacturer:
-            text += f"\n🏭 <b>Ishlab chiqaruvchi:</b> {manufacturer}\n"
+        text = f"<b>{name}</b>\n" \
+               f"\n📄 <b>Ma'lumot - </b> {desc}\n"
+        # if manufacturer:
+        #     text += f"\n🏭 <b>Ishlab chiqaruvchi:</b> {manufacturer}\n"
         if measure:
             text += f"\n📏 <b>{measure}</b>\n"
         text += f"\n💰 {price}\n"\
                 f"\n💵 Umumiy: {get_total(price_int, quantity)} {UZS_CURRENCY}"
         return text
     else:
-        text = f"🛍️ <b>{name}</b>\n"\
+        text = f"<b>{name}</b>\n"\
                f"\n📄 Описание: {desc}\n"
         if manufacturer:
             text += f"\n🏭 <b>Производитель:</b> {manufacturer}\n"
@@ -45,10 +45,10 @@ def get_order_items_detail_template(order_items, lang, order):
         item_total = price * quantity
 
         if lang == UZBEK_LANG:
-            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
+            text += f"\n<b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
         else:
-            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
+            text += f"\n<b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
     if lang == UZBEK_LANG:
         text += f"\n\n💵 Umumiy: {format_price(total)} {UZS_CURRENCY}\n" \
@@ -67,10 +67,10 @@ def get_order_items_template(order_items, lang):
         quantity = int(order_item.quantity)
         item_total = price * quantity
         if lang == UZBEK_LANG:
-            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
+            text += f"\n<b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
         else:
-            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
+            text += f"\n<b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
     if lang == UZBEK_LANG:
         text += f"\n\n💵 Umumiy: {format_price(total)} {UZS_CURRENCY}"
@@ -88,10 +88,10 @@ def get_order_confirm_template(order_items, client):
         item_total = price * quantity
 
         if client.lang == UZBEK_LANG:
-            text += f"\n🛍️ <b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
+            text += f"\n<b>{order_item.product.name_uz}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
         else:
-            text += f"\n🛍️ <b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
+            text += f"\n<b>{order_item.product.name_ru}</b> x {quantity} = {format_price(item_total)} {UZS_CURRENCY}"
             total += int(item_total)
     if client.lang == UZBEK_LANG:
         text += f"\n\n💵 Umumiy: {format_price(total)} {UZS_CURRENCY}\n\n"

@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.models import Group
 from django.contrib.auth.admin import UserAdmin
+from django.urls import reverse
+
 from .forms import ProductAdminForm, CustomUserCreationForm, CustomUserChangeForm
 from .models import User, Product, Descriptions, Client, Order, OrderItem, Category
 from django.utils.html import format_html
@@ -216,13 +218,13 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ("id", "phone", "status", "created_at", "updated_at")
     readonly_fields = (
         "client_first_name", "client_tg_phone", "client_tg_id",
-        "client_tg_nick", "phone", "location", "created_at", "updated_at"
+        "client_tg_nick", "phone", "location", "created_at", "updated_at", "total_price"
     )
     list_display_links = ("id", "phone")
     list_filter = ('status',)
     fieldsets = (
         ("Order Details", {  # ✅ Order Info
-            "fields": ("phone", "location", "status", "created_at", "updated_at")
+            "fields": ("phone", "location", "status", "total_price", "created_at", "updated_at")
         }),
 
         ("Client Information", {
@@ -251,6 +253,18 @@ class OrderAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """ ✅ Allow Only Admins to Delete Products """
         return request.user.is_authenticated and request.user.role == "admin"
+
+    def total_price(self, obj):
+        order_items = obj.order_items.only('price', 'quantity')
+        total = 0
+        for item in order_items:
+            price = extract_price(item.price)
+            total += price * int(item.quantity)
+        return format_html(
+            "<b>{} {}</b>",
+            format_price(total) or "N/A",
+            "UZS"
+        )
 
     def client_first_name(self, obj):
         if not obj.client:

@@ -1,3 +1,5 @@
+import json
+
 from sqlalchemy.future import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
@@ -6,6 +8,10 @@ from sqlalchemy import delete
 from db.models import Client, Product, Descriptions, Order, OrderItem, Category
 from db.setup import get_db_session
 from commons.constants import UZBEK_LANG, RUSSIAN_LANG, NEW_ORDER_STATUS
+
+from commons.dataclass_objects import dict_to_client_dto
+from commons.utils import client_to_dict
+from services.redis_client import redis
 
 
 async def create_client(session: AsyncSession, first_name, last_name, tg_id, tg_nick, lang=None):
@@ -33,15 +39,33 @@ async def save_client_lang(session: AsyncSession, lang):
     return client
 
 
+CACHE_TTL_SECONDS = 3600 # 1 hour
+
+
 async def get_client(session: AsyncSession, tg_id):
-    result = await session.execute(select(Client).filter_by(tg_id=str(tg_id)))
-    return result.scalars().first()
+
+    key = f"client:{tg_id}"
+
+    # 1. Try Redis
+    cached = await redis.get(key)
+    if cached:
+        data = json.loads(cached)
+        return dict_to_client_dto(data)
+
+    # 2. Fallback to DB
+    client = await session.execute(select(Client).filter_by(tg_id=str(tg_id)))
+    client = client.scalars().first()
+    if client is None:
+        return None
+
+    # 3. Save to Redis
+    data = client_to_dict(client)
+    await redis.set(key, json.dumps(data), ex=CACHE_TTL_SECONDS)
+
+    return dict_to_client_dto(data)
 
 
 async def get_products(session: AsyncSession, lang, name=None, category=None):
-    print(name, 'NAME')
-    print(category, 'CATEGORY')
-
     filters = []  # ✅ Start with an empty list of filters
 
     if name:
@@ -59,7 +83,6 @@ async def get_products(session: AsyncSession, lang, name=None, category=None):
             Category.name_ru == category
         ))
 
-    print(filters, 'FILTERS')
     if lang == UZBEK_LANG:
         result = await session.execute(
             select(Product.id, Product.name_uz, Product.name_ru)
@@ -124,7 +147,7 @@ async def get_product_by_id(session: AsyncSession, product_id, lang):
 
 
 async def get_product(session: AsyncSession, lang, name: str):
-    name = f"%{name.split('/')[0].split('💉 - ')[1].strip()}%"
+    name = f"%{name.split('/')[0].split('🛍 - ')[1].strip()}%"
     result = await session.execute(
         select(Product)
         .options(joinedload(Product.measure), joinedload(Product.category))
@@ -216,7 +239,7 @@ async def update_or_create_order_item(session: AsyncSession, order_id, quantity,
         )
         session.add(order_item)
         await session.commit()
-        return order_item
+    return order_item
 
 
 async def get_order_item(session: AsyncSession, product_id, client_id):

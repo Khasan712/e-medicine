@@ -1,5 +1,7 @@
 import re
 
+from db.models import Client
+
 
 def price_reformat_float(price: str):
     match = re.search(r"[\d]+(?:\.\d+)?", price)
@@ -23,3 +25,19 @@ def format_price(price):
 
 def get_total(price, qty):
     return format_price(price*qty)
+
+
+def client_to_dict(client: Client) -> dict:
+    return {
+        "id": client.id,
+        "first_name": client.first_name,
+        "last_name": client.last_name,
+        "phone": client.phone,
+        "tg_phone": client.tg_phone,
+        "tg_id": client.tg_id,
+        "tg_nick": client.tg_nick,
+        "location": client.location,
+        "l_t": client.l_t,
+        "e_t": client.e_t,
+        "lang": client.lang,
+    }

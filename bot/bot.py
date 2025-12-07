@@ -6,6 +6,7 @@ from os import getenv
 
 from aiogram.exceptions import TelegramBadRequest
 from dotenv import load_dotenv
+from sqlalchemy import select
 
 from sqlalchemy.sql import func
 
@@ -16,6 +17,8 @@ from aiogram.fsm.context import FSMContext
 from aiogram.client.default import DefaultBotProperties
 from aiogram.types import Message, CallbackQuery, BufferedInputFile
 
+from db.models import Client
+from services.redis_client import redis
 from commons.states import UserState, clear_quantity_states
 from commons.products import (
     get_product_detail_template, get_order_items_template, get_order_confirm_template, get_order_items_detail_template
@@ -39,6 +42,7 @@ from db.queries import (
 
 load_dotenv()
 TOKEN = getenv("BOT_TOKEN")
+
 
 dp = Dispatcher()
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
@@ -71,11 +75,14 @@ async def language_handler(message: Message) -> None:
     lang = UZBEK_LANG if message.text == DICTIONARY['1'][UZBEK_LANG] else RUSSIAN_LANG
 
     async for session in get_db_session():
-        client = await get_client(session, message.from_user.id)
-        if client:
+        tg_id = message.from_user.id
+        client = await session.execute(select(Client).filter_by(tg_id=str(tg_id)))
+        client = client.scalars().first()
+        if client and client.lang != lang:
             client.lang = lang
             client.updated_at = func.now()
             await session.commit()
+            await redis.delete(f"client:{tg_id}")
         else:
             await create_client(
                 session=session,
@@ -244,7 +251,7 @@ async def handle_cart_page_messages(message: Message, state: FSMContext):
 
 
 # Product detail
-@dp.message(F.text.startswith('💉 - ') and F.text.contains('/'))
+@dp.message(F.text.startswith('🛍 - ') and F.text.contains('/'))
 async def handle_product_detail(message: Message, state: FSMContext):
     order_item = None
     # Fetch product data from the database or cache
