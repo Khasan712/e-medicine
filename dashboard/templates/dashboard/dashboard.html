@@ -1,0 +1,303 @@
+{% extends 'dashboard/base.html' %}
+{% load dashboard_tags %}
+
+{% block title %}{% t 'nav_dashboard' %}{% endblock %}
+{% block page_title %}{% t 'nav_dashboard' %}{% endblock %}
+
+{% block content %}
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Orders -->
+    <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{% t 'total_orders' %}</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ total_orders }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    <span class="text-green-600 dark:text-green-400 font-medium">+{{ recent_orders }}</span> {% t 'this_week' %}
+                </p>
+            </div>
+            <div class="w-14 h-14 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                <svg class="w-7 h-7 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Orders -->
+    <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{% t 'new_orders' %}</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ new_orders }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{% t 'awaiting_processing' %}</p>
+            </div>
+            <div class="w-14 h-14 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center">
+                <svg class="w-7 h-7 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Clients -->
+    <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{% t 'total_clients' %}</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ total_clients }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    <span class="text-green-600 dark:text-green-400 font-medium">+{{ new_clients_week }}</span> {% t 'this_week' %}
+                </p>
+            </div>
+            <div class="w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                <svg class="w-7 h-7 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Total Products -->
+    <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border p-6 hover:shadow-md transition-shadow">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{% t 'nav_products' %}</p>
+                <p class="text-3xl font-bold text-gray-900 dark:text-white">{{ total_products }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{% t 'in_categories' %} {{ total_categories }}</p>
+            </div>
+            <div class="w-14 h-14 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                <svg class="w-7 h-7 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Orders by Status Chart -->
+    <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{% t 'orders_by_status' %}</h3>
+        <div class="h-64">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Daily Orders Chart -->
+    <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border p-6">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">{% t 'orders_this_week' %}</h3>
+        <div class="h-64">
+            <canvas id="dailyChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats Row -->
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+    <!-- Orders On The Way -->
+    <div class="bg-gradient-to-r from-orange-500 to-orange-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-orange-100 text-sm font-medium">{% t 'status_on_the_way' %}</p>
+                <p class="text-4xl font-bold mt-1">{{ orders_on_way }}</p>
+            </div>
+            <svg class="w-12 h-12 text-orange-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Completed Orders -->
+    <div class="bg-gradient-to-r from-green-500 to-green-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-green-100 text-sm font-medium">{% t 'status_completed' %}</p>
+                <p class="text-4xl font-bold mt-1">{{ completed_orders }}</p>
+            </div>
+            <svg class="w-12 h-12 text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Categories -->
+    <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-indigo-100 text-sm font-medium">{% t 'nav_categories' %}</p>
+                <p class="text-4xl font-bold mt-1">{{ total_categories }}</p>
+            </div>
+            <svg class="w-12 h-12 text-indigo-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"/>
+            </svg>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Orders Table -->
+<div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border">
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-border flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{% t 'recent_orders' %}</h3>
+        <a href="{% url 'dashboard:orders_list' %}" class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors">
+            <svg class="w-3.5 h-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+            </svg>
+            {% t 'view_all' %}
+        </a>
+    </div>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead>
+                <tr class="bg-gray-50 dark:bg-slate-800">
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'order_id' %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'client' %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'phone' %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'status' %}</th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'date' %}</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 dark:divide-dark-border">
+                {% for order in latest_orders %}
+                <tr class="table-row-hover cursor-pointer" onclick="window.location='{% url 'dashboard:order_detail' order.id %}'">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">#{{ order.id }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-900 dark:text-gray-200">
+                            {% if order.client %}
+                                {{ order.client.first_name|default:"-" }} {{ order.client.last_name|default:"" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ order.phone|default:"-" }}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex px-2.5 py-1 text-xs font-medium rounded-full {{ order.status|status_class }}">
+                            {% status_label order.status %}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">{{ order.created_at|date:"M d, Y H:i" }}</span>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                        {% t 'no_orders' %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Theme detection
+const isDark = document.documentElement.classList.contains('dark');
+const textColor = isDark ? '#e2e8f0' : '#374151';
+const gridColor = isDark ? '#334155' : '#e5e7eb';
+
+// Orders by Status Chart
+const statusData = {{ orders_by_status|safe }};
+const statusLabels = statusData.map(item => item.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()));
+const statusValues = statusData.map(item => item.count);
+const statusColors = {
+    'Ordered': '#3B82F6',
+    'On The Way': '#F59E0B',
+    'Completed': '#10B981',
+    'Rejected': '#EF4444',
+    'New': '#6B7280'
+};
+
+new Chart(document.getElementById('statusChart'), {
+    type: 'doughnut',
+    data: {
+        labels: statusLabels,
+        datasets: [{
+            data: statusValues,
+            backgroundColor: statusLabels.map(label => statusColors[label] || '#6B7280'),
+            borderWidth: 0,
+            hoverOffset: 10
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true,
+                    pointStyle: 'circle',
+                    color: textColor
+                }
+            }
+        },
+        cutout: '65%'
+    }
+});
+
+// Daily Orders Chart
+const dailyData = {{ daily_orders|safe }};
+const dailyLabels = dailyData.map(item => {
+    const date = new Date(item.date);
+    return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+});
+const dailyValues = dailyData.map(item => item.count);
+
+new Chart(document.getElementById('dailyChart'), {
+    type: 'bar',
+    data: {
+        labels: dailyLabels,
+        datasets: [{
+            label: 'Orders',
+            data: dailyValues,
+            backgroundColor: '#3B82F6',
+            borderRadius: 8,
+            barThickness: 40
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1,
+                    color: textColor
+                },
+                grid: {
+                    display: true,
+                    drawBorder: false,
+                    color: gridColor
+                }
+            },
+            x: {
+                ticks: {
+                    color: textColor
+                },
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -84,7 +84,7 @@ class Client(models.Model):
     last_name = models.CharField(max_length=100, blank=True, null=True)
     phone = models.CharField(max_length=100, blank=True, null=True)
     tg_phone = models.CharField(max_length=100, blank=True, null=True)
-    tg_id = models.CharField(max_length=100, blank=True, null=True)
+    tg_id = models.CharField(max_length=100, blank=True, null=True, unique=True)
     tg_nick = models.CharField(max_length=100, blank=True, null=True)
     location = models.CharField(max_length=255, blank=True, null=True)
     l_t = models.CharField(max_length=255, blank=True, null=True)

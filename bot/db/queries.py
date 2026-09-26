@@ -39,7 +39,13 @@ async def save_client_lang(session: AsyncSession, lang):
     return client
 
 
-CACHE_TTL_SECONDS = 3600 # 1 hour
+CACHE_TTL_SECONDS = 3600  # 1 hour
+
+
+async def fetch_client(session: AsyncSession, tg_id):
+    client = await session.execute(select(Client).filter_by(tg_id=str(tg_id)))
+    client = client.scalars().first()
+    return client
 
 
 async def get_client(session: AsyncSession, tg_id):
@@ -53,8 +59,7 @@ async def get_client(session: AsyncSession, tg_id):
         return dict_to_client_dto(data)
 
     # 2. Fallback to DB
-    client = await session.execute(select(Client).filter_by(tg_id=str(tg_id)))
-    client = client.scalars().first()
+    client = await fetch_client(session, tg_id)
     if client is None:
         return None
 
@@ -85,7 +90,7 @@ async def get_products(session: AsyncSession, lang, name=None, category=None):
 
     if lang == UZBEK_LANG:
         result = await session.execute(
-            select(Product.id, Product.name_uz, Product.name_ru)
+            select(Product.id, Product.name_uz, Product.price)
             .outerjoin(Product.category)
             .filter(and_(*filters))
             .order_by(Product.created_at.desc())
@@ -147,7 +152,7 @@ async def get_product_by_id(session: AsyncSession, product_id, lang):
 
 
 async def get_product(session: AsyncSession, lang, name: str):
-    name = f"%{name.split('/')[0].split('🛍 - ')[1].strip()}%"
+    name = f"%{name.split('-')[0].strip()}%"
     result = await session.execute(
         select(Product)
         .options(joinedload(Product.measure), joinedload(Product.category))
@@ -159,6 +164,7 @@ async def get_product(session: AsyncSession, lang, name: str):
         )
     )
     product = result.scalars().first()
+    print(product, "PRODUCT HERE | --------------------<>--------------------")
     if product:
         if lang == UZBEK_LANG:
             return {

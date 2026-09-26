@@ -1,0 +1,42 @@
+{% extends 'dashboard/base.html' %}
+{% load dashboard_tags %}
+
+{% block title %}{% t 'delete_product' %}{% endblock %}
+{% block page_title %}{% t 'delete_product' %}{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto">
+    <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border">
+        <div class="p-6 text-center">
+            <div class="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">{% t 'delete_product' %}</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-6">
+                {% t 'delete_product_confirm' %} <strong class="text-gray-900 dark:text-white">{{ product.name_ru }}</strong>?
+            </p>
+
+            {% if product.img %}
+            <div class="mb-6">
+                <img src="{{ product.img.url }}" alt="{{ product.name_ru }}"
+                     class="w-24 h-24 object-cover rounded-lg mx-auto">
+            </div>
+            {% endif %}
+
+            <form method="post" class="flex justify-center space-x-3">
+                {% csrf_token %}
+                <a href="{% url 'dashboard:products_list' %}"
+                   class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover">
+                    {% t 'cancel' %}
+                </a>
+                <button type="submit"
+                        class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 dark:focus:ring-offset-dark-bg">
+                    {% t 'delete_product' %}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

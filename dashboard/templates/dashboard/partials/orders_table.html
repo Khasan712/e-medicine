@@ -1,0 +1,115 @@
+{% load dashboard_tags %}
+
+<div class="overflow-x-auto">
+    <table class="w-full">
+        <thead>
+            <tr class="bg-gray-50 dark:bg-slate-800">
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'order_id' %}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'client' %}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'phone' %}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'items' %}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'total' %}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'status' %}</th>
+                <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'date' %}</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100 dark:divide-dark-border">
+            {% for order in orders %}
+            <tr class="table-row-hover cursor-pointer" onclick="window.location='{% url 'dashboard:order_detail' order.id %}'">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">#{{ order.id }}</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="flex items-center">
+                        <div class="w-8 h-8 bg-gray-200 dark:bg-slate-600 rounded-full flex items-center justify-center mr-3">
+                            <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
+                                {% if order.client %}
+                                    {{ order.client.first_name|slice:":1"|upper|default:"?" }}
+                                {% else %}
+                                    ?
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">
+                                {% if order.client %}
+                                    {{ order.client.first_name|default:"-" }} {{ order.client.last_name|default:"" }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </p>
+                            {% if order.client and order.client.tg_nick %}
+                            <p class="text-xs text-gray-500 dark:text-gray-400">@{{ order.client.tg_nick }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ order.phone|default:"-" }}</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="text-sm text-gray-900 dark:text-gray-200">{{ order.order_items.count }} {% t 'items_count' %}</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="text-sm font-medium text-gray-900 dark:text-white">{% get_order_total order %}</span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex px-2.5 py-1 text-xs font-medium rounded-full {{ order.status|status_class }}">
+                        {% status_label order.status %}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">{{ order.created_at|date:"M d, Y" }}</span>
+                    <p class="text-xs text-gray-400 dark:text-gray-500">{{ order.created_at|time:"H:i" }}</p>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="px-6 py-12 text-center">
+                    <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                    </svg>
+                    <p class="text-gray-500 dark:text-gray-400">{% t 'no_orders' %}</p>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if orders.has_other_pages %}
+<div class="px-6 py-4 border-t border-gray-100 dark:border-dark-border">
+    <div class="flex items-center justify-between">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+            {% t 'showing' %} {{ orders.start_index }} {% t 'to' %} {{ orders.end_index }} {% t 'of' %} {{ orders.paginator.count }} {% t 'nav_orders' %}
+        </p>
+        <div class="flex items-center space-x-2">
+            {% if orders.has_previous %}
+            <a href="?page={{ orders.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
+               class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover">
+                {% t 'previous' %}
+            </a>
+            {% endif %}
+
+            {% for num in orders.paginator.page_range %}
+                {% if orders.number == num %}
+                <span class="px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg">{{ num }}</span>
+                {% elif num > orders.number|add:'-3' and num < orders.number|add:'3' %}
+                <a href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
+                   class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover">
+                    {{ num }}
+                </a>
+                {% endif %}
+            {% endfor %}
+
+            {% if orders.has_next %}
+            <a href="?page={{ orders.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
+               class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover">
+                {% t 'next' %}
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}

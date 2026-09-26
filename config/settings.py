@@ -47,6 +47,7 @@ INSTALLED_APPS += [
 # project apps
 INSTALLED_APPS += [
     'app',
+    'dashboard',
 ]
 
 MIDDLEWARE = [

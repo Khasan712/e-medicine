@@ -1,0 +1,154 @@
+{% extends 'dashboard/base.html' %}
+{% load dashboard_tags %}
+
+{% block title %}{% t 'client' %}: {{ client.first_name|default:"Unknown" }}{% endblock %}
+{% block page_title %}{% t 'client_details' %}{% endblock %}
+
+{% block header_actions %}
+<div class="flex items-center space-x-3">
+    <a href="{% url 'dashboard:client_edit' client.id %}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+        {% t 'edit_client' %}
+    </a>
+    <a href="{% url 'dashboard:clients_list' %}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover">
+        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
+        </svg>
+        {% t 'back' %}
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Client Profile -->
+    <div class="lg:col-span-1">
+        <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border">
+            <div class="p-6 text-center border-b border-gray-100 dark:border-dark-border">
+                <div class="w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span class="text-2xl font-bold text-primary-600 dark:text-primary-400">
+                        {{ client.first_name|slice:":1"|upper|default:"?" }}{{ client.last_name|slice:":1"|upper }}
+                    </span>
+                </div>
+                <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
+                    {{ client.first_name|default:"-" }} {{ client.last_name|default:"" }}
+                </h2>
+                {% if client.tg_nick %}
+                <p class="text-sm text-primary-600 dark:text-primary-400">@{{ client.tg_nick }}</p>
+                {% endif %}
+            </div>
+            <div class="p-6">
+                <dl class="space-y-4">
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{% t 'phone' %}</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-200">{{ client.phone|default:"-" }}</dd>
+                    </div>
+                    {% if client.tg_phone %}
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{% t 'telegram_phone' %}</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-200">{{ client.tg_phone }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if client.tg_id %}
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{% t 'telegram_id' %}</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-200">{{ client.tg_id }}</dd>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{% t 'language' %}</dt>
+                        <dd class="mt-1">
+                            {% if client.lang %}
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {% if client.lang == 'uz' %}bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300{% else %}bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300{% endif %}">
+                                {% if client.lang == 'uz' %}{% t 'uzbek' %}{% else %}{% t 'russian' %}{% endif %}
+                            </span>
+                            {% else %}
+                            <span class="text-sm text-gray-400 dark:text-gray-500">{% t 'not_set' %}</span>
+                            {% endif %}
+                        </dd>
+                    </div>
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{% t 'location' %}</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-200">{{ client.location|default:"-" }}</dd>
+                    </div>
+                    {% if client.l_t and client.e_t %}
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{% t 'coordinates' %}</dt>
+                        <dd class="mt-1">
+                            <a href="https://maps.google.com/?q={{ client.l_t }},{{ client.e_t }}"
+                               target="_blank"
+                               class="inline-flex items-center text-sm text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300">
+                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                </svg>
+                                {% t 'view_on_map' %}
+                            </a>
+                        </dd>
+                    </div>
+                    {% endif %}
+                    <div>
+                        <dt class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">{% t 'joined' %}</dt>
+                        <dd class="mt-1 text-sm text-gray-900 dark:text-gray-200">{{ client.created_at|date:"M d, Y H:i" }}</dd>
+                    </div>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Orders History -->
+    <div class="lg:col-span-2">
+        <div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border">
+            <div class="px-6 py-4 border-b border-gray-100 dark:border-dark-border">
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{% t 'order_history' %}</h3>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="bg-gray-50 dark:bg-slate-800">
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'order_id' %}</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'items' %}</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'total' %}</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'status' %}</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{% t 'date' %}</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-dark-border">
+                        {% for order in orders %}
+                        <tr class="table-row-hover cursor-pointer" onclick="window.location='{% url 'dashboard:order_detail' order.id %}'">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">#{{ order.id }}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm text-gray-900 dark:text-gray-200">{{ order.order_items.count }} {% t 'items' %}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm font-medium text-gray-900 dark:text-white">{% get_order_total order %}</span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="inline-flex px-2.5 py-1 text-xs font-medium rounded-full {{ order.status|status_class }}">
+                                    {% status_label order.status %}
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <span class="text-sm text-gray-500 dark:text-gray-400">{{ order.created_at|date:"M d, Y" }}</span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="px-6 py-12 text-center">
+                                <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                                </svg>
+                                <p class="text-gray-500 dark:text-gray-400">{% t 'no_orders_yet' %}</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

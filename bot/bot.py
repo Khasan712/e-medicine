@@ -36,7 +36,7 @@ from db.setup import init_db, get_db_session
 from db.queries import (
     get_client, create_client, fetch_or_create_client, get_product, get_product_by_id, fetch_or_create_order,
     update_or_create_order_item, get_order_item, get_order_items, get_order, mass_delete_order_items,
-    get_ordered_orders, get_order_items_by_order_id, get_order_by_id_exclude_new
+    get_ordered_orders, get_order_items_by_order_id, get_order_by_id_exclude_new, fetch_client
 )
 
 
@@ -73,27 +73,29 @@ async def command_start_handler(message: Message) -> None:
 @dp.message(F.text.in_([DICTIONARY['1'][UZBEK_LANG], DICTIONARY['1'][RUSSIAN_LANG]]))
 async def language_handler(message: Message) -> None:
     lang = UZBEK_LANG if message.text == DICTIONARY['1'][UZBEK_LANG] else RUSSIAN_LANG
+    tg_id = message.from_user.id
 
     async for session in get_db_session():
-        tg_id = message.from_user.id
-        client = await session.execute(select(Client).filter_by(tg_id=str(tg_id)))
-        client = client.scalars().first()
-        if client and client.lang != lang:
-            client.lang = lang
-            client.updated_at = func.now()
-            await session.commit()
-            await redis.delete(f"client:{tg_id}")
+        result = await session.execute(select(Client).filter_by(tg_id=str(tg_id)))
+        client = result.scalars().first()
+        if client:
+            if client.lang != lang:
+                client.lang = lang
+                client.updated_at = func.now()
+                await session.commit()
         else:
-            await create_client(
+            client = await create_client(
                 session=session,
                 first_name=message.from_user.first_name,
                 last_name=message.from_user.last_name,
-                tg_id=str(message.from_user.id),
+                tg_id=str(tg_id),
                 tg_nick=message.from_user.username,
-                lang=lang
+                lang=lang,
             )
+        await redis.delete(f"client:{tg_id}")
+
     if not client.tg_phone:
-        await message.answer(text=DICTIONARY['4'][lang], reply_markup=get_phone_markup(client.lang))
+        await message.answer(text=DICTIONARY['4'][client.lang], reply_markup=get_phone_markup(client.lang))
     else:
         await message.answer(text=DICTIONARY['8'][client.lang], reply_markup=get_main_menu(client.lang))
 
@@ -108,7 +110,7 @@ async def phone_number_handler(message: Message, state: FSMContext) -> None:
     current_state = await state.get_state()
     if current_state == UserState.order_update_phone:
         async for session in get_db_session():
-            client = await get_client(session, message.from_user.id)
+            client = await fetch_client(session, message.from_user.id)
             order = await get_order(session, client.id)
             if not order:
                 return
@@ -130,12 +132,13 @@ async def phone_number_handler(message: Message, state: FSMContext) -> None:
             await state.set_state(UserState.main_menu)
     else:
         async for session in get_db_session():
-            client = await get_client(session, message.from_user.id)
+            client = await fetch_client(session, message.from_user.id)
             client.phone = message.contact.phone_number
             client.tg_phone = message.contact.phone_number
             client.updated_at = func.now()
             await session.commit()
-            await message.answer(text=DICTIONARY['8'][client.lang], reply_markup=get_main_menu(client.lang))
+        await message.answer(text=DICTIONARY['8'][client.lang], reply_markup=get_main_menu(client.lang))
+    await redis.delete(f"client:{message.from_user.id}")
 
 
 # Update language
@@ -251,10 +254,11 @@ async def handle_cart_page_messages(message: Message, state: FSMContext):
 
 
 # Product detail
-@dp.message(F.text.startswith('🛍 - ') and F.text.contains('/'))
+# @dp.message(F.text.startswith('🛍 - ') and F.text.contains(' UZS '))
+@dp.message(UserState.category_selected)
 async def handle_product_detail(message: Message, state: FSMContext):
     order_item = None
-    # Fetch product data from the database or cache
+    print(message.text, "===================<>===================")
 
     async for session in get_db_session():
         client = await get_client(session, message.from_user.id)
@@ -583,7 +587,7 @@ async def add_to_cart_handler(callback_query: CallbackQuery, state: FSMContext):
 @dp.message(UserState.order_update_first_name)
 async def handle_order_first_name_update(message: Message, state: FSMContext):
     async for session in get_db_session():
-        client = await get_client(session, message.from_user.id)
+        client = await fetch_client(session, message.from_user.id)
         order = await get_order(session, client.id)
         if not order:
             return
@@ -604,7 +608,7 @@ async def handle_order_first_name_update(message: Message, state: FSMContext):
 @dp.message(UserState.order_update_phone)
 async def handle_order_phone_update(message: Message, state: FSMContext):
     async for session in get_db_session():
-        client = await get_client(session, message.from_user.id)
+        client = await fetch_client(session, message.from_user.id)
         order = await get_order(session, client.id)
         if not order:
             return
@@ -630,7 +634,7 @@ async def handle_order_location_update(message: Message, state: FSMContext):
         longitude = str(message.location.longitude)
         location = f'{latitude} {longitude}'
         async for session in get_db_session():
-            client = await get_client(session, message.from_user.id)
+            client = await fetch_client(session, message.from_user.id)
             order = await get_order(session, client.id)
             if not order:
                 return
@@ -649,7 +653,7 @@ async def handle_order_location_update(message: Message, state: FSMContext):
         await state.set_state(UserState.main_menu)
     elif message.text:
         async for session in get_db_session():
-            client = await get_client(session, message.from_user.id)
+            client = await fetch_client(session, message.from_user.id)
             order = await get_order(session, client.id)
             if not order:
                 return
@@ -681,6 +685,7 @@ async def handle_selected_category(message: Message, state: FSMContext):
         client = await get_client(session, message.from_user.id)
         markup = await get_products_keyboard(session, client.lang, category=category)
         await message.answer(text=DICTIONARY['10'][client.lang], reply_markup=markup)
+        await message.answer(text=DICTIONARY['44'][client.lang])
         await state.set_state(UserState.category_selected)
 
 

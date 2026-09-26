@@ -42,8 +42,8 @@ DICTIONARY = {
         RUSSIAN_LANG: "⏪ Назад",
     },
     '10': {
-        UZBEK_LANG: "🏪 Maxsulotlarimiz.",
-        RUSSIAN_LANG: "🏪 Наши продукты.",
+        UZBEK_LANG: "🏪 Mahsulotlar ro‘yxati:",
+        RUSSIAN_LANG: "🏪 Список товаров:",
     },
     '11': {
         UZBEK_LANG: "Sizni qayta ko‘rganimizdan xursandmiz. 😊",
@@ -176,8 +176,8 @@ DICTIONARY = {
         RUSSIAN_LANG: "📝 Введите ваше имя.",
     },
     '41': {
-        UZBEK_LANG: "📂 Kategoriyani tanlang.",
-        RUSSIAN_LANG: "📂 Выберите категорию.",
+        UZBEK_LANG: "📂 Kategoriyadan birini tanlang. 👇",
+        RUSSIAN_LANG: "📂 Выберите одну из категорий. 👇",
     },
     '42': {
         UZBEK_LANG: "📞 Telefon raqamini ulashish",
@@ -186,6 +186,10 @@ DICTIONARY = {
     '43': {
         UZBEK_LANG: "Telefon raqam o’zgartirildi ✅",
         RUSSIAN_LANG: "Номер телефона изменен ✅",
+    },
+    '44': {
+        UZBEK_LANG: "⬇️ Kerakli mahsulotni tanlash uchun ustiga bosing. 👇",
+        RUSSIAN_LANG: "⬇️ Нажмите на нужный товар, чтобы выбрать его. 👇",
     },
 
 }

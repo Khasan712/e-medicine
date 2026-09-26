@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="uz" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kirish | DeliveryHub Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            300: '#93c5fd',
+                            400: '#60a5fa',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                            800: '#1e40af',
+                            900: '#1e3a8a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="h-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+    <div class="min-h-full flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="w-full max-w-md">
+            <!-- Logo and Title -->
+            <div class="text-center mb-8">
+                <div class="mx-auto w-20 h-20 bg-primary-500 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-primary-500/30">
+                    <svg class="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold text-white mb-2">DeliveryHub</h1>
+                <p class="text-slate-400">Boshqaruv paneli</p>
+            </div>
+
+            <!-- Login Form -->
+            <div class="bg-white rounded-2xl shadow-2xl p-8">
+                <h2 class="text-2xl font-semibold text-gray-900 mb-6 text-center">Hisobingizga kiring</h2>
+
+                {% if messages %}
+                <div class="mb-6">
+                    {% for message in messages %}
+                    <div class="px-4 py-3 rounded-lg {% if message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+                        {% if message.tags == 'error' %}
+                        Telefon raqami yoki parol noto'g'ri
+                        {% else %}
+                        {{ message }}
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <form method="post" action="{% url 'dashboard:login' %}" class="space-y-6">
+                    {% csrf_token %}
+
+                    <div>
+                        <label for="id_phone_number" class="block text-sm font-medium text-gray-700 mb-2">
+                            Telefon raqami
+                        </label>
+                        {{ form.phone_number }}
+                        {% if form.phone_number.errors %}
+                        <p class="mt-1 text-sm text-red-600">Telefon raqamini kiriting</p>
+                        {% endif %}
+                    </div>
+
+                    <div>
+                        <label for="id_password" class="block text-sm font-medium text-gray-700 mb-2">
+                            Parol
+                        </label>
+                        {{ form.password }}
+                        {% if form.password.errors %}
+                        <p class="mt-1 text-sm text-red-600">Parolni kiriting</p>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit"
+                            class="w-full py-3 px-4 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-primary-500/30 hover:shadow-primary-500/40 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2">
+                        Kirish
+                    </button>
+                </form>
+            </div>
+
+            <!-- Footer -->
+            <p class="mt-8 text-center text-sm text-slate-500">
+                Universal Yetkazib Berish Tizimi
+            </p>
+        </div>
+    </div>
+</body>
+</html>

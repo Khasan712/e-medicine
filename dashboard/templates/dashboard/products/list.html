@@ -1,0 +1,70 @@
+{% extends 'dashboard/base.html' %}
+{% load dashboard_tags %}
+
+{% block title %}{% t 'nav_products' %}{% endblock %}
+{% block page_title %}{% t 'nav_products' %}{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'dashboard:product_create' %}" class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700">
+    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+    </svg>
+    {% t 'add_product' %}
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Search and Filter Bar -->
+<div class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border p-4 mb-6">
+    <div class="flex flex-col sm:flex-row gap-4">
+        <div class="flex-1">
+            <div class="relative">
+                <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text"
+                       id="searchInput"
+                       name="search"
+                       value="{{ search }}"
+                       placeholder="{% t 'search_products' %}"
+                       class="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-dark-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-slate-800 dark:text-gray-200 dark:placeholder-gray-400"
+                       hx-get="{% url 'dashboard:products_list' %}"
+                       hx-target="#products-table"
+                       hx-trigger="keyup changed delay:500ms, search"
+                       hx-include="#categoryFilter"
+                       hx-indicator="#search-spinner"
+                       x-data
+                       @keyup="if($el.value.length > 0 && $el.value.length < 2) $event.stopPropagation()">
+                <!-- Loading spinner -->
+                <div id="search-spinner" class="htmx-indicator absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <svg class="animate-spin h-5 w-5 text-primary-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+        <div>
+            <select id="categoryFilter"
+                    name="category"
+                    class="px-4 py-2.5 border border-gray-300 dark:border-dark-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-dark-card dark:text-gray-200"
+                    hx-get="{% url 'dashboard:products_list' %}"
+                    hx-target="#products-table"
+                    hx-trigger="change"
+                    hx-include="#searchInput">
+                <option value="">{% t 'all_categories' %}</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if current_category == cat.id|stringformat:"s" %}selected{% endif %}>
+                    {% localized_name cat %}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Products Table -->
+<div id="products-table" class="bg-white dark:bg-dark-card rounded-xl shadow-sm border border-gray-100 dark:border-dark-border">
+    {% include 'dashboard/partials/products_table.html' %}
+</div>
+{% endblock %}
