@@ -191,5 +191,21 @@ DICTIONARY = {
         UZBEK_LANG: "⬇️ Kerakli mahsulotni tanlash uchun ustiga bosing. 👇",
         RUSSIAN_LANG: "⬇️ Нажмите на нужный товар, чтобы выбрать его. 👇",
     },
+    '45': {
+        UZBEK_LANG: "🛍 Onlayn do'konni ochish",
+        RUSSIAN_LANG: "🛍 Открыть онлайн-магазин",
+    },
+    '46': {
+        UZBEK_LANG: "✨ Endi buyurtmani onlayn do'konda ham berishingiz mumkin — rasmli menyu, savat va buyurtma holatini kuzatish.",
+        RUSSIAN_LANG: "✨ Теперь заказывать можно и в онлайн-магазине — меню с фото, корзина и отслеживание заказа.",
+    },
+    '47': {
+        UZBEK_LANG: "✅ Tasdiqlandi! Saytga qayting — hisobingizga avtomatik kirasiz.",
+        RUSSIAN_LANG: "✅ Подтверждено! Вернитесь на сайт — вход выполнится автоматически.",
+    },
+    '48': {
+        UZBEK_LANG: "⌛️ Havola eskirgan yoki allaqachon ishlatilgan. Saytda «Telegram orqali kirish» ni qayta bosing.",
+        RUSSIAN_LANG: "⌛️ Ссылка устарела или уже использована. Нажмите «Войти через Telegram» на сайте ещё раз.",
+    },
 
 }

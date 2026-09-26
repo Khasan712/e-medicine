@@ -138,9 +138,8 @@
              @click="mobileMenuOpen = false"></div>
 
         <!-- Sidebar -->
-        <aside :class="sidebarOpen ? 'lg:w-64' : 'lg:w-20'"
-               class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar sidebar-transition transform lg:translate-x-0"
-               :class="mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+        <aside :class="(sidebarOpen ? 'lg:w-64' : 'lg:w-20') + ' ' + (mobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0')"
+               class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar sidebar-transition transform">
 
             <!-- Logo -->
             <div class="flex items-center justify-between h-16 px-4 bg-sidebar-active">
@@ -168,7 +167,9 @@
                     {% t 'nav_products' as nav_products %}
                     {% t 'nav_categories' as nav_categories %}
                     {% t 'nav_users' as nav_users %}
+                    {% t 'nav_sales' as nav_sales %}
                     {% include 'dashboard/partials/nav_item.html' with url='dashboard:dashboard' icon='dashboard' label=nav_dashboard %}
+                    {% include 'dashboard/partials/nav_item.html' with url='dashboard:sales_pos' icon='sales' label=nav_sales badge='AI' %}
                     {% include 'dashboard/partials/nav_item.html' with url='dashboard:orders_list' icon='orders' label=nav_orders %}
                     {% include 'dashboard/partials/nav_item.html' with url='dashboard:clients_list' icon='clients' label=nav_clients %}
                     {% include 'dashboard/partials/nav_item.html' with url='dashboard:products_list' icon='products' label=nav_products %}

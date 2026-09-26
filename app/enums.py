@@ -38,3 +38,55 @@ class OrderEnum(Enum):
             (key.value, key.name)
             for key in cls
         )
+
+
+class OrderSourceEnum(Enum):
+    """Where the order came from."""
+    bot = 'bot'          # Telegram bot chat flow
+    web = 'web'          # website (browser)
+    miniapp = 'miniapp'  # Telegram Mini App
+    admin = 'admin'      # created by staff in the dashboard "Sales" section
+
+    @classmethod
+    def choices(cls):
+        return (
+            (key.value, key.name)
+            for key in cls
+        )
+
+
+class DeliveryTypeEnum(Enum):
+    delivery = 'delivery'
+    pickup = 'pickup'
+
+    @classmethod
+    def choices(cls):
+        return (
+            (key.value, key.name)
+            for key in cls
+        )
+
+
+class PaymentMethodEnum(Enum):
+    cash = 'cash'
+    card = 'card'
+
+    @classmethod
+    def choices(cls):
+        return (
+            (key.value, key.name)
+            for key in cls
+        )
+
+
+class LoginTokenStatusEnum(Enum):
+    pending = 'pending'
+    confirmed = 'confirmed'
+    used = 'used'
+
+    @classmethod
+    def choices(cls):
+        return (
+            (key.value, key.name)
+            for key in cls
+        )

@@ -87,6 +87,7 @@ class Order(Base):
     location = Column(String(255), nullable=True)
     l_t = Column(String(255), nullable=True)
     e_t = Column(String(255), nullable=True)
+    source = Column(String(20), nullable=False, default="bot", server_default="bot")
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
@@ -115,3 +116,16 @@ class OrderItem(Base):
 
     def __repr__(self):
         return f"<OrderItem(id={self.id}, order_id={self.order_id}, product_id={self.product_id}, quantity={self.quantity})>"
+
+
+class TelegramLoginToken(Base):
+    """Website "Log in with Telegram": the site creates the token, the bot confirms it (see Django app.models)."""
+    __tablename__ = "app_telegramlogintoken"
+
+    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    token = Column(String(64), unique=True, nullable=False)
+    status = Column(String(20), nullable=False, server_default="pending")
+    client_id = Column(BigInteger, ForeignKey("app_client.id", ondelete="CASCADE"), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    confirmed_at = Column(DateTime(timezone=True), nullable=True)

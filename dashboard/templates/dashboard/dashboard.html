@@ -166,13 +166,8 @@
                         <span class="text-sm font-medium text-gray-900 dark:text-white">#{{ order.id }}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="text-sm text-gray-900 dark:text-gray-200">
-                            {% if order.client %}
-                                {{ order.client.first_name|default:"-" }} {{ order.client.last_name|default:"" }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </span>
+                        <span class="text-sm text-gray-900 dark:text-gray-200">{{ order.display_name|default:"-" }}</span>
+                        <span class="ml-1.5 inline-flex px-1.5 py-0.5 rounded {{ order.source|source_class }} text-[10px] font-semibold align-middle">{% source_label order.source %}</span>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="text-sm text-gray-500 dark:text-gray-400">{{ order.phone|default:"-" }}</span>

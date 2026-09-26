@@ -1,6 +1,22 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from os import getenv
+
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from commons.dictionary import DICTIONARY
 from commons.constants import UZBEK_LANG, RUSSIAN_LANG
+
+
+def get_shop_keyboard(lang):
+    """Inline button that opens the web shop as a Telegram Mini App (None when WEBAPP_URL is not set).
+
+    An inline (not reply-keyboard) button is used on purpose: only inline/menu buttons pass the
+    signed user data (initData) that signs the customer in automatically.
+    """
+    url = getenv("WEBAPP_URL")
+    if not url:
+        return None
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=DICTIONARY['45'][lang or UZBEK_LANG], web_app=WebAppInfo(url=url))]
+    ])
 
 
 def get_quantity_keyboard(product_id, quantity, lang):

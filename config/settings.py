@@ -17,6 +17,8 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 dotenv.load_dotenv()
+# The bot keeps its token in bot/.env; load it as a fallback (never overrides values already set).
+dotenv.load_dotenv(BASE_DIR / 'bot' / '.env', override=False)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/3.2/howto/deployment/checklist/
 
@@ -48,6 +50,7 @@ INSTALLED_APPS += [
 INSTALLED_APPS += [
     'app',
     'dashboard',
+    'shop',
 ]
 
 MIDDLEWARE = [
@@ -169,3 +172,57 @@ CORS_ALLOW_HEADERS = (
 )
 
 DATA_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024 * 50
+
+# ---------------------------------------------------------------------------
+# Customer web shop (website + Telegram Mini App)
+# ---------------------------------------------------------------------------
+SHOP_NAME = os.getenv('SHOP_NAME', 'DeliveryHub')
+SHOP_TAGLINE = os.getenv('SHOP_TAGLINE', '')
+SHOP_SUPPORT_PHONE = os.getenv('SHOP_SUPPORT_PHONE', '')
+SHOP_MIN_ORDER = int(os.getenv('SHOP_MIN_ORDER', '0') or 0)
+SHOP_DELIVERY_TIME = os.getenv('SHOP_DELIVERY_TIME', '30–45')
+
+TELEGRAM_BOT_TOKEN = os.getenv('BOT_TOKEN', '')
+# Optional: resolved automatically via getMe when empty.
+TELEGRAM_BOT_USERNAME = os.getenv('TELEGRAM_BOT_USERNAME', '')
+# Optional chat (group/channel id) that receives a message about every new web/Mini App order.
+ORDERS_NOTIFY_CHAT_ID = os.getenv('ORDERS_NOTIFY_CHAT_ID', '')
+
+# SMS backend for phone sign-in codes: console | eskiz | telegram_gateway
+SMS_BACKEND = os.getenv('SMS_BACKEND', 'console')
+ESKIZ_EMAIL = os.getenv('ESKIZ_EMAIL', '')
+ESKIZ_PASSWORD = os.getenv('ESKIZ_PASSWORD', '')
+ESKIZ_FROM = os.getenv('ESKIZ_FROM', '4546')
+ESKIZ_MESSAGE = os.getenv('ESKIZ_MESSAGE', '{shop}: tasdiqlash kodi {code}')
+TELEGRAM_GATEWAY_TOKEN = os.getenv('TELEGRAM_GATEWAY_TOKEN', '')
+# Local development only: returns the sign-in code in the API response. Never enable in production.
+SHOP_OTP_DEBUG = os.getenv('SHOP_OTP_DEBUG') == 'True'
+
+# ---------------------------------------------------------------------------
+# Voice / AI order entry (dashboard "Sales" section) — Google Gemini API
+# ---------------------------------------------------------------------------
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', '')
+# Turns operator speech/text into order fields (structured JSON output). Flash-Lite answers in ~1.5 s;
+# the fallbacks are tried when a model is overloaded (503) or rate-limited.
+GEMINI_PARSE_MODEL = os.getenv('GEMINI_PARSE_MODEL', 'gemini-3.5-flash-lite')
+# If the main model has not answered after this many seconds, the next model is asked in parallel.
+GEMINI_PARSE_HEDGE_SECONDS = float(os.getenv('GEMINI_PARSE_HEDGE_SECONDS', '4'))
+GEMINI_PARSE_FALLBACK_MODELS = [
+    model.strip() for model in os.getenv('GEMINI_PARSE_FALLBACK_MODELS', 'gemini-3.1-flash-lite,gemini-3.5-flash').split(',')
+    if model.strip()
+]
+# Speech-to-text for recorded audio.
+GEMINI_TRANSCRIBE_MODEL = os.getenv('GEMINI_TRANSCRIBE_MODEL', 'gemini-3.5-transcribe')
+# Real-time captions while the operator speaks (Live API, browser connects with an ephemeral token).
+GEMINI_LIVE_MODEL = os.getenv('GEMINI_LIVE_MODEL', 'gemini-3.5-transcribe-live')
+GEMINI_LIVE_ENABLED = os.getenv('GEMINI_LIVE_ENABLED', 'True') == 'True'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {'console': {'class': 'logging.StreamHandler'}},
+    'loggers': {
+        'shop': {'handlers': ['console'], 'level': 'INFO'},
+        'dashboard': {'handlers': ['console'], 'level': 'INFO'},
+    },
+}

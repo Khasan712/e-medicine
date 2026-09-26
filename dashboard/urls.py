@@ -1,9 +1,15 @@
 from django.urls import path
-from . import views
+from . import views, sales
 
 app_name = 'dashboard'
 
 urlpatterns = [
+    # Sales (orders created by staff, by hand or by voice)
+    path('sales/', sales.sales_pos, name='sales_pos'),
+    path('sales/create/', sales.sales_create, name='sales_create'),
+    path('sales/voice/token/', sales.sales_voice_token, name='sales_voice_token'),
+    path('sales/voice/parse/', sales.sales_voice_parse, name='sales_voice_parse'),
+
     # Authentication
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),

@@ -1,4 +1,5 @@
 import base64
+import json
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
@@ -11,7 +12,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 from app.models import Product, Category, Client, Order, OrderItem, Descriptions
-from app.enums import OrderEnum
+from app.enums import OrderEnum, OrderSourceEnum
 from .forms import (
     LoginForm, ProductForm, CategoryForm, ClientForm,
     OrderStatusForm, UserForm, UserCreateForm
@@ -134,8 +135,11 @@ def dashboard_view(request):
         'total_products': total_products,
         'total_categories': total_categories,
         'latest_orders': latest_orders,
-        'orders_by_status': list(orders_by_status),
-        'daily_orders': list(daily_orders),
+        # Serialized as JSON: the template embeds these in <script>, and date objects are not valid JS.
+        'orders_by_status': json.dumps(list(orders_by_status)),
+        'daily_orders': json.dumps([
+            {'date': row['date'].isoformat(), 'count': row['count']} for row in daily_orders
+        ]),
     }
 
     return render(request, 'dashboard/dashboard.html', context)
@@ -146,6 +150,7 @@ def dashboard_view(request):
 @login_required(login_url='dashboard:login')
 def orders_list(request):
     status_filter = request.GET.get('status', '')
+    source_filter = request.GET.get('source', '')
     search = request.GET.get('search', '')
 
     orders = Order.objects.exclude(
@@ -155,11 +160,15 @@ def orders_list(request):
     if status_filter:
         orders = orders.filter(status=status_filter)
 
+    if source_filter:
+        orders = orders.filter(source=source_filter)
+
     if search:
         orders = orders.filter(
             Q(client__first_name__icontains=search) |
             Q(client__last_name__icontains=search) |
             Q(client__phone__icontains=search) |
+            Q(customer_name__icontains=search) |
             Q(phone__icontains=search) |
             Q(id__icontains=search)
         )
@@ -175,7 +184,9 @@ def orders_list(request):
     context = {
         'orders': orders,
         'status_choices': status_choices,
+        'source_choices': [source.value for source in OrderSourceEnum],
         'current_status': status_filter,
+        'current_source': source_filter,
         'search': search,
     }
 
@@ -188,22 +199,11 @@ def orders_list(request):
 @login_required(login_url='dashboard:login')
 def order_detail(request, pk):
     order = get_object_or_404(
-        Order.objects.select_related('client').prefetch_related('order_items__product'),
+        Order.objects.select_related('client', 'created_by').prefetch_related('order_items__product'),
         pk=pk
     )
 
-    # Calculate total price (price * quantity for each item)
-    total = 0
-    for item in order.order_items.all():
-        if item.price:
-            try:
-                price_str = item.price.replace(' ', '').replace('UZS', '').replace('сум', '').strip()
-                price = int(price_str)
-                # Get quantity, default to 1 if not set
-                quantity = int(item.quantity) if item.quantity else 1
-                total += price * quantity
-            except (ValueError, AttributeError):
-                pass
+    total = order.get_total()
 
     form = OrderStatusForm(initial={'status': order.status})
 

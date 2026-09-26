@@ -52,6 +52,7 @@ def is_active_nav(context, url_name):
 
     # Define section mappings (handle both singular and plural URL names)
     section_mappings = {
+        'sales_pos': ['sales'],
         'orders': ['orders', 'order'],
         'clients': ['clients', 'client'],
         'products': ['products', 'product'],
@@ -151,6 +152,27 @@ def item_subtotal(item):
         except (ValueError, AttributeError):
             return item.price
     return '0 UZS'
+
+
+SOURCE_CLASSES = {
+    'bot': 'bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300',
+    'web': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    'miniapp': 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300',
+    'admin': 'bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-900/40 dark:text-fuchsia-300',
+}
+
+
+@register.filter
+def source_class(source):
+    """Badge colors for the order source (bot / web / miniapp / admin)."""
+    return SOURCE_CLASSES.get(source, 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-gray-300')
+
+
+@register.simple_tag(takes_context=True)
+def source_label(context, source):
+    request = context.get('request')
+    lang = request.session.get('dashboard_lang', 'uz') if request else 'uz'
+    return get_translation(f'source_{source}', lang) if source else '-'
 
 
 @register.simple_tag(takes_context=True)

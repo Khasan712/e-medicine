@@ -12,10 +12,10 @@ from sqlalchemy.sql import func
 
 from aiogram.enums import ParseMode
 from aiogram import Bot, Dispatcher, F
-from aiogram.filters import CommandStart
+from aiogram.filters import CommandStart, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.client.default import DefaultBotProperties
-from aiogram.types import Message, CallbackQuery, BufferedInputFile
+from aiogram.types import Message, CallbackQuery, BufferedInputFile, MenuButtonWebApp, WebAppInfo
 
 from db.models import Client
 from services.redis_client import redis
@@ -24,7 +24,8 @@ from commons.products import (
     get_product_detail_template, get_order_items_template, get_order_confirm_template, get_order_items_detail_template
 )
 from keyboards.inline.language import (
-    get_quantity_keyboard, get_order_items_keyboard, get_confirmation_emojis, get_confirm_order_keyboard
+    get_quantity_keyboard, get_order_items_keyboard, get_confirmation_emojis, get_confirm_order_keyboard,
+    get_shop_keyboard
 )
 from keyboards.markup.language import (
     get_main_menu, language_markup, get_phone_markup, get_products_keyboard, get_search_keyboard,
@@ -36,7 +37,8 @@ from db.setup import init_db, get_db_session
 from db.queries import (
     get_client, create_client, fetch_or_create_client, get_product, get_product_by_id, fetch_or_create_order,
     update_or_create_order_item, get_order_item, get_order_items, get_order, mass_delete_order_items,
-    get_ordered_orders, get_order_items_by_order_id, get_order_by_id_exclude_new, fetch_client
+    get_ordered_orders, get_order_items_by_order_id, get_order_by_id_exclude_new, fetch_client,
+    confirm_login_token
 )
 
 
@@ -46,6 +48,26 @@ TOKEN = getenv("BOT_TOKEN")
 
 dp = Dispatcher()
 bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+
+
+# Website "Log in with Telegram": the site opens t.me/<bot>?start=login_<token>
+@dp.message(CommandStart(deep_link=True, magic=F.args.startswith('login_')))
+async def web_login_handler(message: Message, command: CommandObject) -> None:
+    client = await fetch_or_create_client(
+        user_id=message.from_user.id,
+        first_name=message.from_user.first_name,
+        last_name=message.from_user.last_name,
+        username=message.from_user.username
+    )
+    async for session in get_db_session():
+        confirmed = await confirm_login_token(session, command.args.removeprefix('login_'), client.id)
+
+    key = '47' if confirmed else '48'
+    if client.lang in (UZBEK_LANG, RUSSIAN_LANG):
+        text = DICTIONARY[key][client.lang]
+    else:
+        text = f"{DICTIONARY[key][UZBEK_LANG]}\n\n{DICTIONARY[key][RUSSIAN_LANG]}"
+    await message.answer(text=text)
 
 
 @dp.message(CommandStart())
@@ -67,6 +89,9 @@ async def command_start_handler(message: Message) -> None:
         await message.answer(text=DICTIONARY['4'][client.lang], reply_markup=get_phone_markup(client.lang))
     else:
         await message.answer(text=DICTIONARY['11'][client.lang], reply_markup=get_main_menu(client.lang))
+        shop_keyboard = get_shop_keyboard(client.lang)
+        if shop_keyboard:
+            await message.answer(text=DICTIONARY['46'][client.lang], reply_markup=shop_keyboard)
 
 
 # user selects language
@@ -689,7 +714,20 @@ async def handle_selected_category(message: Message, state: FSMContext):
         await state.set_state(UserState.category_selected)
 
 
+async def setup_menu_button() -> None:
+    webapp_url = getenv("WEBAPP_URL")
+    if not webapp_url:
+        return
+    try:
+        await bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(text="🛍 Do'kon", web_app=WebAppInfo(url=webapp_url))
+        )
+    except TelegramBadRequest as e:
+        logging.warning("Could not set the Mini App menu button: %s", e)
+
+
 async def main() -> None:
+    await setup_menu_button()
     await dp.start_polling(bot)
     await init_db()
 

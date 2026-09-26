@@ -5,7 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql import func, or_, and_
 from sqlalchemy import delete
-from db.models import Client, Product, Descriptions, Order, OrderItem, Category
+from datetime import datetime, timezone
+
+from db.models import Client, Product, Descriptions, Order, OrderItem, Category, TelegramLoginToken
 from db.setup import get_db_session
 from commons.constants import UZBEK_LANG, RUSSIAN_LANG, NEW_ORDER_STATUS
 
@@ -343,3 +345,16 @@ async def get_ordered_orders(session: AsyncSession, client_id):
     )
     return result.scalars().all()
 
+
+
+async def confirm_login_token(session: AsyncSession, token, client_id) -> bool:
+    """Mark a website login token as confirmed by this Telegram user; the site picks it up by polling."""
+    result = await session.execute(select(TelegramLoginToken).filter_by(token=token))
+    login = result.scalars().first()
+    if not login or login.status != "pending" or login.expires_at < datetime.now(timezone.utc):
+        return False
+    login.client_id = client_id
+    login.status = "confirmed"
+    login.confirmed_at = func.now()
+    await session.commit()
+    return True

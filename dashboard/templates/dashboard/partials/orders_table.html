@@ -23,24 +23,17 @@
                     <div class="flex items-center">
                         <div class="w-8 h-8 bg-gray-200 dark:bg-slate-600 rounded-full flex items-center justify-center mr-3">
                             <span class="text-xs font-medium text-gray-600 dark:text-gray-300">
-                                {% if order.client %}
-                                    {{ order.client.first_name|slice:":1"|upper|default:"?" }}
-                                {% else %}
-                                    ?
-                                {% endif %}
+                                {{ order.display_name|default:"?"|slice:":1"|upper }}
                             </span>
                         </div>
                         <div>
                             <p class="text-sm font-medium text-gray-900 dark:text-white">
-                                {% if order.client %}
-                                    {{ order.client.first_name|default:"-" }} {{ order.client.last_name|default:"" }}
-                                {% else %}
-                                    -
-                                {% endif %}
+                                {{ order.display_name|default:"-" }}
                             </p>
-                            {% if order.client and order.client.tg_nick %}
-                            <p class="text-xs text-gray-500 dark:text-gray-400">@{{ order.client.tg_nick }}</p>
-                            {% endif %}
+                            <p class="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
+                                <span class="inline-flex px-1.5 py-0.5 rounded {{ order.source|source_class }} text-[10px] font-semibold">{% source_label order.source %}</span>
+                                {% if order.client and order.client.tg_nick %}<span>@{{ order.client.tg_nick }}</span>{% endif %}
+                            </p>
                         </div>
                     </div>
                 </td>
@@ -86,7 +79,7 @@
         </p>
         <div class="flex items-center space-x-2">
             {% if orders.has_previous %}
-            <a href="?page={{ orders.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
+            <a href="?page={{ orders.previous_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_source %}&source={{ current_source }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
                class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover">
                 {% t 'previous' %}
             </a>
@@ -96,7 +89,7 @@
                 {% if orders.number == num %}
                 <span class="px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg">{{ num }}</span>
                 {% elif num > orders.number|add:'-3' and num < orders.number|add:'3' %}
-                <a href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
+                <a href="?page={{ num }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_source %}&source={{ current_source }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
                    class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover">
                     {{ num }}
                 </a>
@@ -104,7 +97,7 @@
             {% endfor %}
 
             {% if orders.has_next %}
-            <a href="?page={{ orders.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
+            <a href="?page={{ orders.next_page_number }}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_source %}&source={{ current_source }}{% endif %}{% if search %}&search={{ search }}{% endif %}"
                class="px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-card border border-gray-300 dark:border-dark-border rounded-lg hover:bg-gray-50 dark:hover:bg-dark-hover">
                 {% t 'next' %}
             </a>

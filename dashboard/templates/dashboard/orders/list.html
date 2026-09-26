@@ -22,7 +22,7 @@
                        hx-get="{% url 'dashboard:orders_list' %}"
                        hx-target="#orders-table"
                        hx-trigger="keyup changed delay:500ms, search"
-                       hx-include="#statusFilter"
+                       hx-include="#statusFilter, #sourceFilter"
                        hx-indicator="#search-spinner"
                        x-data
                        @keyup="if($el.value.length > 0 && $el.value.length < 2) $event.stopPropagation()">
@@ -42,12 +42,26 @@
                     hx-get="{% url 'dashboard:orders_list' %}"
                     hx-target="#orders-table"
                     hx-trigger="change"
-                    hx-include="#searchInput">
+                    hx-include="#searchInput, #sourceFilter">
                 <option value="">{% t 'all_statuses' %}</option>
                 {% for value, label in status_choices %}
                 <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>
                     {% status_label value %}
                 </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <select id="sourceFilter"
+                    name="source"
+                    class="w-full sm:w-auto px-4 py-2.5 border border-gray-300 dark:border-dark-border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent bg-white dark:bg-dark-card dark:text-gray-200"
+                    hx-get="{% url 'dashboard:orders_list' %}"
+                    hx-target="#orders-table"
+                    hx-trigger="change"
+                    hx-include="#searchInput, #statusFilter">
+                <option value="">{% t 'all_sources' %}</option>
+                {% for value in source_choices %}
+                <option value="{{ value }}" {% if current_source == value %}selected{% endif %}>{% source_label value %}</option>
                 {% endfor %}
             </select>
         </div>
