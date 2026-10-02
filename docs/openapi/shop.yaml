@@ -1,0 +1,698 @@
+openapi: 3.0.3
+info:
+  title: DeliveryHub API
+  version: v1
+  description: See docs/api.md for the conventions (errors, pagination, authentication).
+paths:
+  /api/v1/auth/phone/request:
+    post:
+      operationId: auth_phone_request_create
+      summary: Send a sign-in code by SMS
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhoneRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PhoneRequestRequest'
+        required: true
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PhoneCodeSent'
+          description: ''
+  /api/v1/auth/phone/verify:
+    post:
+      operationId: auth_phone_verify_create
+      summary: Sign in with the SMS code
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PhoneVerifyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PhoneVerifyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PhoneVerifyRequest'
+        required: true
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResult'
+          description: ''
+  /api/v1/auth/telegram/check:
+    get:
+      operationId: auth_telegram_check_retrieve
+      summary: Poll a Telegram sign-in (every 2 s)
+      parameters:
+      - in: query
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - auth
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramLoginCheck'
+          description: ''
+  /api/v1/auth/telegram/start:
+    post:
+      operationId: auth_telegram_start_create
+      summary: Start signing in through the customers' bot
+      tags:
+      - auth
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TelegramLoginStart'
+          description: ''
+  /api/v1/auth/telegram/webapp:
+    post:
+      operationId: auth_telegram_webapp_create
+      summary: Sign in inside the Telegram Mini App
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitDataRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InitDataRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InitDataRequest'
+        required: true
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResult'
+          description: ''
+  /api/v1/me:
+    get:
+      operationId: me_retrieve
+      summary: The signed-in customer
+      tags:
+      - me
+      security:
+      - customerToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientEnvelope'
+          description: ''
+    patch:
+      operationId: me_partial_update
+      summary: Update the profile
+      tags:
+      - me
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProfileRequest'
+      security:
+      - customerToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientEnvelope'
+          description: ''
+  /api/v1/orders:
+    get:
+      operationId: orders_list
+      summary: The customer's latest orders
+      tags:
+      - orders
+      security:
+      - customerToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderList'
+          description: ''
+    post:
+      operationId: orders_create
+      summary: Place an order
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/OrderCreateRequest'
+        required: true
+      security:
+      - customerToken: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+          description: ''
+  /api/v1/orders/{id}:
+    get:
+      operationId: orders_retrieve
+      summary: One order of the customer
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - orders
+      security:
+      - customerToken: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderEnvelope'
+          description: ''
+  /api/v1/shop:
+    get:
+      operationId: shop_retrieve
+      summary: Business profile and the whole catalog
+      tags:
+      - shop
+      security:
+      - customerToken: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shop'
+          description: ''
+components:
+  schemas:
+    AuthResult:
+      type: object
+      properties:
+        token:
+          type: string
+        client:
+          $ref: '#/components/schemas/Client'
+        created:
+          type: boolean
+      required:
+      - client
+      - created
+      - token
+    Business:
+      type: object
+      properties:
+        name:
+          type: string
+        tagline:
+          type: string
+        support_phone:
+          type: string
+        delivery_time:
+          type: string
+        min_order:
+          type: integer
+        brand_color:
+          type: string
+        logo:
+          type: string
+          nullable: true
+      required:
+      - brand_color
+      - delivery_time
+      - logo
+      - min_order
+      - name
+      - support_phone
+      - tagline
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name_uz:
+          type: string
+        name_ru:
+          type: string
+      required:
+      - id
+      - name_ru
+      - name_uz
+    Client:
+      type: object
+      properties:
+        id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        telegram:
+          type: boolean
+        tg_nick:
+          type: string
+        lang:
+          type: string
+        address:
+          type: string
+          description: Last delivery address, to prefill checkout
+        lat:
+          type: string
+        lng:
+          type: string
+      required:
+      - address
+      - first_name
+      - id
+      - lang
+      - last_name
+      - lat
+      - lng
+      - phone
+      - telegram
+      - tg_nick
+    ClientEnvelope:
+      type: object
+      properties:
+        client:
+          $ref: '#/components/schemas/Client'
+      required:
+      - client
+    DeliveryTypeEnum:
+      enum:
+      - delivery
+      - pickup
+      type: string
+      description: |-
+        * `delivery` - delivery
+        * `pickup` - pickup
+    InitDataRequest:
+      type: object
+      properties:
+        init_data:
+          type: string
+          minLength: 1
+          maxLength: 10000
+      required:
+      - init_data
+    LangEnum:
+      enum:
+      - uz
+      - ru
+      type: string
+      description: |-
+        * `uz` - uz
+        * `ru` - ru
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        source:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        total:
+          type: integer
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        customer_name:
+          type: string
+        phone:
+          type: string
+        address:
+          type: string
+        lat:
+          type: string
+        lng:
+          type: string
+        delivery_type:
+          type: string
+        payment_method:
+          type: string
+        comment:
+          type: string
+      required:
+      - address
+      - comment
+      - created_at
+      - customer_name
+      - delivery_type
+      - id
+      - items
+      - lat
+      - lng
+      - payment_method
+      - phone
+      - source
+      - status
+      - total
+      - updated_at
+    OrderCreateRequest:
+      type: object
+      description: Documents the body of POST /orders; the view checks it with the
+        order rules of the contract.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLineRequest'
+        name:
+          type: string
+          minLength: 1
+          maxLength: 150
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 30
+        delivery_type:
+          $ref: '#/components/schemas/DeliveryTypeEnum'
+        address:
+          type: string
+          maxLength: 255
+        lat:
+          type: number
+          format: double
+          nullable: true
+        lng:
+          type: number
+          format: double
+          nullable: true
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        comment:
+          type: string
+          maxLength: 1000
+        platform:
+          $ref: '#/components/schemas/PlatformEnum'
+        lang:
+          $ref: '#/components/schemas/LangEnum'
+      required:
+      - delivery_type
+      - items
+      - name
+      - payment_method
+      - phone
+      - platform
+    OrderEnvelope:
+      type: object
+      properties:
+        order:
+          $ref: '#/components/schemas/Order'
+      required:
+      - order
+    OrderItem:
+      type: object
+      properties:
+        product_id:
+          type: integer
+          nullable: true
+        name_uz:
+          type: string
+        name_ru:
+          type: string
+        image:
+          type: string
+          nullable: true
+        quantity:
+          type: integer
+        price:
+          type: integer
+        total:
+          type: integer
+      required:
+      - image
+      - name_ru
+      - name_uz
+      - price
+      - product_id
+      - quantity
+      - total
+    OrderLineRequest:
+      type: object
+      properties:
+        product_id:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+      - product_id
+      - quantity
+    OrderList:
+      type: object
+      properties:
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
+      required:
+      - orders
+    PatchedProfileRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        lang:
+          $ref: '#/components/schemas/LangEnum'
+    PaymentMethodEnum:
+      enum:
+      - cash
+      - card
+      type: string
+      description: |-
+        * `cash` - cash
+        * `card` - card
+    PhoneCodeSent:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        phone:
+          type: string
+        resend_in:
+          type: integer
+        ttl:
+          type: integer
+        debug_code:
+          type: string
+      required:
+      - ok
+      - phone
+      - resend_in
+      - ttl
+    PhoneRequestRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 30
+      required:
+      - phone
+    PhoneVerifyRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 30
+        code:
+          type: string
+          minLength: 1
+          maxLength: 12
+        lang:
+          $ref: '#/components/schemas/LangEnum'
+      required:
+      - code
+      - phone
+    PlatformEnum:
+      enum:
+      - web
+      - miniapp
+      type: string
+      description: |-
+        * `web` - web
+        * `miniapp` - miniapp
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name_uz:
+          type: string
+        name_ru:
+          type: string
+        desc_uz:
+          type: string
+        desc_ru:
+          type: string
+        price:
+          type: integer
+        unit_uz:
+          type: string
+        unit_ru:
+          type: string
+        category_id:
+          type: integer
+          nullable: true
+        image:
+          type: string
+          nullable: true
+      required:
+      - category_id
+      - desc_ru
+      - desc_uz
+      - id
+      - image
+      - name_ru
+      - name_uz
+      - price
+      - unit_ru
+      - unit_uz
+    Shop:
+      type: object
+      properties:
+        business:
+          $ref: '#/components/schemas/Business'
+        bot_username:
+          type: string
+          nullable: true
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        popular:
+          type: array
+          items:
+            type: integer
+        client:
+          allOf:
+          - $ref: '#/components/schemas/Client'
+          nullable: true
+      required:
+      - bot_username
+      - business
+      - categories
+      - client
+      - popular
+      - products
+    StatusEnum:
+      enum:
+      - pending
+      - expired
+      - confirmed
+      type: string
+      description: |-
+        * `pending` - pending
+        * `expired` - expired
+        * `confirmed` - confirmed
+    TelegramLoginCheck:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        token:
+          type: string
+        client:
+          $ref: '#/components/schemas/Client'
+        created:
+          type: boolean
+      required:
+      - status
+    TelegramLoginStart:
+      type: object
+      properties:
+        token:
+          type: string
+        url:
+          type: string
+          format: uri
+        expires_in:
+          type: integer
+      required:
+      - expires_in
+      - token
+      - url
+  securitySchemes:
+    customerToken:
+      type: http
+      scheme: bearer

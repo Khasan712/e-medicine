@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="uz" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#F6F5F2" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="description" content="Onlayn buyurtma va yetkazib berish" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Menyu</title>
+    <script>
+      // Runs before the first paint: theme, language and the brand colour of the last visit (no flash),
+      // and the Telegram Mini App SDK — loaded only when the page is opened inside Telegram, so the
+      // website never waits for telegram.org. main.tsx awaits window.__dhTelegramSdk.
+      (function () {
+        var root = document.documentElement;
+        var prefix = 'dh:' + location.host + ':';
+        function read(key) {
+          try {
+            var value = localStorage.getItem(prefix + key);
+            return value === null ? null : JSON.parse(value);
+          } catch (e) {
+            return null;
+          }
+        }
+        function isDarkHex(hex) {
+          var m = /^#?([0-9a-f]{6})$/i.exec(String(hex || ''));
+          if (!m) return undefined;
+          var n = parseInt(m[1], 16);
+          return ((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114 < 128;
+        }
+        var hash = location.hash || '';
+        var inTelegram = false;
+        try {
+          inTelegram =
+            /[#&]tgWebApp(Data|Version|Platform)=/.test(hash) ||
+            !!sessionStorage.getItem('__telegram__initParams') ||
+            !!window.TelegramWebviewProxy;
+        } catch (e) {}
+        var dark;
+        if (inTelegram) {
+          root.setAttribute('data-tg', '');
+          try {
+            var match = /[#&]tgWebAppThemeParams=([^&]*)/.exec(hash);
+            var params = match
+              ? JSON.parse(decodeURIComponent(match[1]))
+              : JSON.parse(sessionStorage.getItem('__telegram__themeParams') || '{}');
+            dark = isDarkHex(params && params.bg_color);
+          } catch (e) {}
+          window.__dhTelegramSdk = new Promise(function (resolve) {
+            var script = document.createElement('script');
+            script.src = 'https://telegram.org/js/telegram-web-app.js';
+            script.onload = script.onerror = function () {
+              resolve();
+            };
+            document.head.appendChild(script);
+          });
+        }
+        if (dark === undefined) {
+          var theme = read('theme') || 'auto';
+          dark =
+            theme === 'dark' ||
+            (theme === 'auto' && !!window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        }
+        root.setAttribute('data-theme', dark ? 'dark' : 'light');
+        if (dark && !inTelegram) {
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', '#0E0F11');
+        }
+        var lang = read('lang');
+        if (lang === 'uz' || lang === 'ru') root.lang = lang;
+        var brand = read('brand');
+        if (brand && typeof brand === 'object') {
+          for (var name in brand) {
+            if (/^--brand/.test(name)) root.style.setProperty(name, String(brand[name]));
+          }
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>Saytdan foydalanish uchun JavaScript'ni yoqing. / Включите JavaScript, чтобы пользоваться сайтом.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

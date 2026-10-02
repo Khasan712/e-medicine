@@ -1,78 +1,97 @@
-# e-medicine — kichik bizneslar uchun yetkazib berish platformasi
+# DeliveryHub — yetkazib berish bizneslari uchun platforma
 
-Mijozlar masofadan buyurtma beradi (Telegram bot, Telegram Mini App yoki sayt), tadbirkor hammasini
-bitta admin panelda ko'radi va boshqaradi. Tadbirkorning o'zi ham buyurtma yarata oladi — qo'lda yoki ovoz bilan.
+Bitta platformada ko'p biznes ishlaydi. Har bir biznesga (fast food, restoran, do'kon) bizning paneldan **profil**
+ochiladi va unga darhol quyidagilar beriladi:
 
-| Qism | Manzil | Nima qiladi |
+```
+DeliveryHub — platforma paneli (deliveryhub.<domen>)
+└── Biznes (masalan, Burger House) — ma'lumotlari alohida PostgreSQL sxemasida
+    ├── Mijozlar uchun: web do'kon + Telegram Mini App (<slug>.<domen>) va mijozlar boti
+    └── Egasi va xodimlar uchun: admin panel + admin Mini App (<slug>-admin.<domen>) va xodimlar boti
+```
+
+## Tuzilma
+
+Har bir qism — o'z papkasida, o'z bog'liqliklari, Dockerfile'i, testlari va README'si bilan. UI'lar bir-biri bilan
+hech narsa bo'lishmaydi — faqat API orqali gaplashadi.
+
+| Papka | Nima | Stek |
 |---|---|---|
-| Admin panel (`dashboard`) | `/` | Buyurtmalar, mijozlar, mahsulotlar, statistika, **Sotuv** bo'limi |
-| Sotuv (`dashboard/sales.py`) | `/sales/` | Admin panelda buyurtma yaratish: qo'lda yoki **ovoz bilan (AI)** |
-| Onlayn do'kon (`shop`) | `/shop/` | Mijozlar uchun sayt **va** Telegram Mini App (bitta sahifa) |
-| Telegram bot (`bot/`) | — | Chat orqali buyurtma, Mini App tugmasi, saytga Telegram orqali kirish |
-| Django admin | `/django-admin/` | Texnik boshqaruv |
+| [`backend/`](backend/) | Barcha funksiyalar va API (`/api/v1/...`), biznes qoidalari, baza, Gemini | Django 5.2 + DRF + django-tenants, PostgreSQL 16, Redis |
+| [`bot/`](bot/) | Barcha Telegram botlar: mijozlar, xodimlar va platforma boti | aiogram 3 + SQLAlchemy 2 async (bazaga to'g'ridan-to'g'ri) |
+| [`client-ui/`](client-ui/) | Mijozlar do'koni — sayt va Telegram Mini App | React + Vite + TypeScript |
+| [`admin-ui/`](admin-ui/) | Biznes egalari va xodimlari uchun admin panel (+ admin Mini App) | React + Vite + TypeScript |
+| [`deliveryhub-ui/`](deliveryhub-ui/) | Bizning platforma panelimiz | React + Vite + TypeScript |
+| [`docs/`](docs/) | [Arxitektura](docs/architecture.md), [API shartnomasi](docs/api.md), [OpenAPI](docs/openapi/) | |
+| `docker-compose.yml`, `Caddyfile` | Qismlarni birga ishga tushirish: hostga qarab UI, `/api` → backend, `/media` → fayllar | Docker, Caddy |
 
-Stek: Django 5.1, PostgreSQL 16, Alpine.js, Tailwind (dashboard), aiogram 3 + SQLAlchemy (bot), Google Gemini API.
+```
+brauzer / Telegram ──► web (Caddy) ──┬── client-ui / admin-ui / deliveryhub-ui (host bo'yicha)
+                                      ├── /api/*   ──► backend (gunicorn)
+                                      └── /media/* ──► rasmlar (volume)
+bot ──► PostgreSQL (to'g'ridan-to'g'ri)      backend ──► PostgreSQL, Redis
+bot ──► Telegram Bot API (long polling), Gemini
+```
+
+Host hamma narsani hal qiladi: `food.<domen>` → `food` biznesi, do'kon API; `food-admin.<domen>` → o'sha biznes,
+admin API; `deliveryhub.<domen>` → platforma API. Noma'lum host — 404, to'xtatilgan biznes — 503.
 
 ## Ishga tushirish
 
 ```bash
-cp .env.example .env        # qiymatlarni to'ldiring
-docker compose up -d --build
-docker compose exec app python manage.py createsuperuser   # admin panelga kirish uchun
+cp .env.example .env          # qiymatlarni to'ldiring
+docker compose up -d --build  # yoki: make up
 ```
 
-Sayt: `http://localhost:9092/shop/` · Admin panel: `http://localhost:9092/`
+Lokal manzillar (`*.localhost` macOS'da o'zi 127.0.0.1 ga boradi):
 
-Testlar: `docker compose exec app python manage.py test shop dashboard`
+* platforma paneli — http://hub.localhost:8100 (login: `.env` dagi `PLATFORM_ADMIN_PHONE` / `PLATFORM_ADMIN_PASSWORD`)
+* biznes do'koni — `http://<slug>.localhost:8100`, admin paneli — `http://<slug>-admin.localhost:8100`
 
-## Onlayn do'kon (`/shop/`) — sayt + Telegram Mini App
+Backend har ishga tushganda barcha biznes sxemalariga migratsiyalarni qo'llaydi va platforma akkauntini yangilaydi.
+Har bir qismni alohida ishlab chiqish — o'z README'sida (UI'lar `npm run dev` da `/api` ni `localhost:8100` ga
+proksilaydi).
 
-- Rasmli menyu, kategoriyalar, qidiruv, savat, rasmiylashtirish (yetkazib berish / olib ketish, naqd / karta, geolokatsiya),
-  buyurtma holatini kuzatish, "yana buyurtma berish", o'zbek / rus tili, yorug' / qorong'i mavzu.
-- **Ro'yxatdan o'tish / kirish** (mijozlar `app.Client` jadvalida — bot bilan umumiy):
-  - **Telefon raqam** — SMS kod (`SMS_BACKEND`: `eskiz`, `telegram_gateway` yoki dev uchun `console`).
-  - **Telegram (saytda)** — "Telegram orqali kirish" botni `?start=login_<token>` bilan ochadi, bot tasdiqlaydi, sayt avtomatik kiradi.
-  - **Telegram Mini App** — `initData` imzosi tekshiriladi va mijoz avtomatik kiradi (hech narsa kiritish shart emas).
-- Buyurtma `source` maydoni bilan saqlanadi: `bot`, `web`, `miniapp`, `admin` — admin panelda belgi va filtr bor.
-- Yangi buyurtma haqida mijozga (agar Telegram'i bo'lsa) va `ORDERS_NOTIFY_CHAT_ID` guruhiga xabar ketadi.
+## Testlar
 
-**Mini App'ni ulash:** `bot/.env` ga `WEBAPP_URL=https://<domen>/shop/` yozing (HTTPS shart) va botni qayta ishga tushiring —
-bot chat pastidagi **menyu tugmasini** o'zi o'rnatadi va `/start` da "Onlayn do'konni ochish" tugmasini ko'rsatadi.
-Reply-klaviatura tugmasi ishlatilmaydi: u Mini App'ga foydalanuvchi ma'lumotini (`initData`) bermaydi.
+```bash
+make test           # hammasi
+make test-backend   # pytest + flake8 (vaqtinchalik PostgreSQL konteyneri bilan)
+make test-bot       # pytest-asyncio
+make test-ui        # har bir UI: vitest + lint + build
+make schema         # docs/openapi/*.yaml ni koddan yangilash
+```
 
-## Sotuv bo'limi (`/sales/`) — qo'lda va ovoz bilan buyurtma
+## Yangi biznes ochish
 
-- Mahsulotni bosib qo'shish, mijoz (ixtiyoriy), yetkazish/olib ketish, to'lov, holat, izoh → **Buyurtma yaratish** (`Ctrl+Enter`).
-- Mijoz kartasi **yaratilmaydi**: buyurtma `client=NULL`, ism/telefon buyurtmaning o'zida, `source=admin`, `created_by` = xodim.
-- **Mikrofon (AI):** tadbirkor buyurtmani aytadi — maydonlar to'ldiriladi, tekshirib, tugmani bosadi.
-  "yana bitta …", "… ni olib tashla", "hammasini tozala" kabi tahrir buyruqlari ham ishlaydi; "Qaytarish" (undo) bor.
-  Klaviatura: `Space` — yozishni boshlash/to'xtatish, `Esc` — bekor qilish, `/` — mahsulot qidirish.
+1. Platforma paneli → **Yangi biznes**: nom, manzil (subdomen), egasining ismi va telefoni, logo, rang. Yaratish
+   biznes sxemasini, manzillarni va egasining admin akkauntini ochadi (parol bir marta ko'rsatiladi).
+2. Biznes sahifasida **QR va havola** → egasi Telegram'da ikki tugma bosadi — **mijozlar boti** va **xodimlar boti**
+   yaratiladi (Telegram Managed Bots). Tokenlar platformaga o'zi keladi, bot servisi ularni ~10 soniyada ishga
+   tushiradi va sozlaydi (Mini App tugmasi, buyruqlar, tavsif). Busiz ham bo'ladi: "@BotFather tokeni bilan ulash".
+3. Egasi admin panelda mahsulotlarini qo'shadi, xodimlarini **Telegram bot** sahifasidagi QR orqali ulaydi.
 
-### Ovozli yordamchi qanday ishlaydi (Gemini)
-
-1. Gapirayotganda brauzer mikrofon ovozini (16 kHz PCM) **Gemini Live API** ga to'g'ridan-to'g'ri uzatadi
-   (`gemini-3.5-transcribe-live`) — so'zlar ekranda jonli chiqadi. API kalit brauzerga berilmaydi: server
-   bir martalik, faqat shu modelga cheklangan **ephemeral token** chiqaradi.
-2. To'xtaganda matn + joriy forma + mahsulotlar katalogi **Gemini Flash-Lite** ga (`gemini-3.5-flash-lite`, JSON schema,
-   ~1.5 s) yuboriladi; u yangilangan formani qaytaradi (mahsulotlar katalog ID'lariga bog'lanadi, topilmaganlari alohida
-   ko'rsatiladi). Model band bo'lsa (503) avtomatik `GEMINI_PARSE_FALLBACK_MODELS` dagi keyingi modelga o'tiladi.
-3. Live ishlamasa, yozib olingan audio serverda `gemini-3.5-transcribe` bilan matnga aylantiriladi
-   (mahsulot nomlari `custom_vocabulary` sifatida beriladi), u ham ishlamasa — audio to'g'ridan-to'g'ri Flash'ga.
-
-`GEMINI_API_KEY` bo'lmasa ham sahifa ishlaydi: yozma buyruqlar lokal parser bilan tahlil qilinadi, mikrofon esa
-brauzerning o'z nutq tanish xizmatiga tayanadi (demo; Safari o'zbek tilini qo'llamaydi). Kalit bilan ovoz barcha zamonaviy
-brauzerlarda (Chrome, Safari, Edge) ishlaydi. Kalit: <https://aistudio.google.com/apikey>. `.env` o'zgargach:
-`docker compose up -d --force-recreate app`.
+Platforma boti uchun: @BotFather'da bot yarating, unda **Bot Management** rejimini yoqing va tokenini `.env` dagi
+`PLATFORM_BOT_TOKEN` ga yozing.
 
 ## Asosiy sozlamalar (`.env`)
 
 | O'zgaruvchi | Tavsif |
 |---|---|
-| `SHOP_NAME`, `SHOP_TAGLINE`, `SHOP_SUPPORT_PHONE`, `SHOP_DELIVERY_TIME`, `SHOP_MIN_ORDER` | Do'kon ko'rinishi va minimal buyurtma |
-| `SMS_BACKEND` + `ESKIZ_*` / `TELEGRAM_GATEWAY_TOKEN` | Telefon orqali kirish kodlari. `console` — faqat server logiga (dev) |
-| `SHOP_OTP_DEBUG` | Faqat lokal: kodni ekranda ko'rsatadi. **Production'da yoqmang** |
-| `ORDERS_NOTIFY_CHAT_ID` | Yangi buyurtmalar haqida xabar boradigan chat/guruh ID |
-| `GEMINI_API_KEY`, `GEMINI_*_MODEL`, `GEMINI_PARSE_FALLBACK_MODELS`, `GEMINI_LIVE_ENABLED` | Ovozli yordamchi |
-| `bot/.env`: `WEBAPP_URL` | Mini App manzili (HTTPS) |
+| `SECRET_KEY` | Sessiyalar, mijoz tokenlari va bot tokenlarining shifri — o'zgarsa, botlarni qayta ulash kerak |
+| `PLATFORM_DOMAIN`, `PLATFORM_HUB_SUBDOMAIN` | Bizneslar manzili (`<slug>.domen`) va bizning panel subdomeni |
+| `PLATFORM_BOT_TOKEN` | Platforma boti (Managed Bots) — bizneslar botlarini yaratadi |
+| `PLATFORM_ADMIN_PHONE`, `PLATFORM_ADMIN_PASSWORD` | Platforma paneliga kirish |
+| `SMS_BACKEND` + `ESKIZ_*` / `TELEGRAM_GATEWAY_TOKEN` | Do'konga telefon orqali kirish kodlari (`console` — faqat log) |
+| `GEMINI_API_KEY`, `GEMINI_*` | Ovozli buyurtma (admin "Sotuv" va xodimlar boti) |
+| `WEB_PORT`, `DB_PORT` | Hostdagi portlar (8100, 5440) |
 
-To'liq ro'yxat: `.env.example`.
+Biznes nomi, telefoni, logosi va botlari `.env` da emas — platforma panelida (bazada; bot tokenlari shifrlangan).
+To'liq ro'yxat: [`.env.example`](.env.example).
+
+## Domenlar va production
+
+Har biznes: `<slug>.<PLATFORM_DOMAIN>` — do'kon, `<slug>-admin.<PLATFORM_DOMAIN>` — admin panel; bizning panel —
+`<PLATFORM_HUB_SUBDOMAIN>.<PLATFORM_DOMAIN>`. Production: `*.domen` wildcard DNS → server, TLS — tunnel yoki
+yuk balansirovchida (web konteyner oddiy HTTP), Mini App faqat HTTPS manzilni ochadi. `PLATFORM_DOMAIN` o'zgarsa,
+`manage.py ensure_platform` (har startda ishlaydi) barcha bizneslarga yangi domenlarni qo'shadi.

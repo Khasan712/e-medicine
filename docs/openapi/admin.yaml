@@ -1,0 +1,2105 @@
+openapi: 3.0.3
+info:
+  title: DeliveryHub API
+  version: v1
+  description: See docs/api.md for the conventions (errors, pagination, authentication).
+paths:
+  /api/v1/auth/csrf:
+    get:
+      operationId: auth_csrf_retrieve
+      summary: Set the csrftoken cookie
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/login:
+    post:
+      operationId: auth_login_create
+      description: POST {"phone", "password"} → the `me` payload of the API; 400 invalid_credentials.
+      summary: Sign in with phone and password
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffMe'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginError'
+          description: ''
+  /api/v1/auth/logout:
+    post:
+      operationId: auth_logout_create
+      summary: Sign out
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/me:
+    get:
+      operationId: auth_me_retrieve
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: The signed-in staff member and their business
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffMe'
+          description: ''
+  /api/v1/auth/telegram:
+    post:
+      operationId: auth_telegram_create
+      description: |-
+        Sign-in of the admin panel opened as a Mini App from the staff bot: Telegram signs initData with the
+        bot token, and a staff member whose Telegram account is linked is signed in without a password.
+      summary: Sign in from the staff bot Mini App
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InitDataRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InitDataRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InitDataRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffMe'
+          description: ''
+  /api/v1/categories:
+    get:
+      operationId: categories_list
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: All categories (not paginated)
+      parameters:
+      - in: query
+        name: search
+        schema:
+          type: string
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+          description: ''
+    post:
+      operationId: categories_create
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CategoryRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+  /api/v1/categories/{id}:
+    get:
+      operationId: categories_retrieve
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    patch:
+      operationId: categories_partial_update
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - categories
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCategoryRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+          description: ''
+    delete:
+      operationId: categories_destroy
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: Delete a category (its products stay, without a category)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - categories
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/clients:
+    get:
+      operationId: clients_list
+      description: A paginated list for staff; subclasses filter in get_queryset().
+      summary: Customers, newest first
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - in: query
+        name: search
+        schema:
+          type: string
+      tags:
+      - clients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedClientList'
+          description: ''
+  /api/v1/clients/{id}:
+    get:
+      operationId: clients_retrieve
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: A customer with their orders
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - clients
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientDetail'
+          description: ''
+    patch:
+      operationId: clients_partial_update
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: Edit a customer
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - clients
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClientUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedClientUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedClientUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientDetail'
+          description: ''
+  /api/v1/dashboard:
+    get:
+      operationId: dashboard_retrieve
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: Key numbers of the business
+      tags:
+      - dashboard
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Dashboard'
+          description: ''
+  /api/v1/orders:
+    get:
+      operationId: orders_list
+      description: A paginated list for staff; subclasses filter in get_queryset().
+      summary: Orders, newest first
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Order number, customer name or phone
+      - in: query
+        name: source
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+      tags:
+      - orders
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderSummaryList'
+          description: ''
+  /api/v1/orders/{id}:
+    get:
+      operationId: orders_retrieve
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: One order
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - orders
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+    patch:
+      operationId: orders_partial_update
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: Change the status (the customer gets a Telegram message)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatusRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedOrderStatusRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+          description: ''
+  /api/v1/products:
+    get:
+      operationId: products_list
+      description: A paginated list for staff; subclasses filter in get_queryset().
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - in: query
+        name: search
+        schema:
+          type: string
+      tags:
+      - products
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProductList'
+          description: ''
+    post:
+      operationId: products_create
+      description: A paginated list for staff; subclasses filter in get_queryset().
+      summary: Add a product
+      parameters:
+      - in: query
+        name: category
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProductWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/ProductWriteRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+  /api/v1/products/{id}:
+    get:
+      operationId: products_retrieve
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - products
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    patch:
+      operationId: products_partial_update
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: Edit a product
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - products
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedProductWriteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedProductWriteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedProductWriteRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+          description: ''
+    delete:
+      operationId: products_destroy
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - products
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/sales:
+    get:
+      operationId: sales_retrieve
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: Everything the point of sale needs
+      tags:
+      - sales
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sales'
+          description: ''
+    post:
+      operationId: sales_create
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: Record a sale
+      tags:
+      - sales
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaleCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SaleCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SaleCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SaleCreated'
+          description: ''
+  /api/v1/telegram:
+    get:
+      operationId: telegram_retrieve
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: The staff bot and linked Telegram accounts
+      tags:
+      - telegram
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Telegram'
+          description: ''
+  /api/v1/telegram/invites:
+    post:
+      operationId: telegram_invites_create
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: A one-time link that connects a Telegram account (yours; admins — anyone's)
+      tags:
+      - telegram
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InviteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InviteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/InviteRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invite'
+          description: ''
+  /api/v1/telegram/links/{id}:
+    patch:
+      operationId: telegram_links_partial_update
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: Turn order notifications on or off
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - telegram
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLinkUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedLinkUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedLinkUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Link'
+          description: ''
+    delete:
+      operationId: telegram_links_destroy
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: Unlink a Telegram account
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - telegram
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/units:
+    get:
+      operationId: units_list
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: Units of measure
+      tags:
+      - units
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Unit'
+          description: ''
+    post:
+      operationId: units_create
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      tags:
+      - units
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnitRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/UnitRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/UnitRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Unit'
+          description: ''
+  /api/v1/users:
+    get:
+      operationId: users_list
+      description: A paginated list for staff; subclasses filter in get_queryset().
+      summary: Staff users (admins only)
+      parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+      - name: page_size
+        in: query
+        required: false
+        schema:
+          type: integer
+          minimum: 1
+          maximum: 100
+      - in: query
+        name: search
+        schema:
+          type: string
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStaffUserList'
+          description: ''
+    post:
+      operationId: users_create
+      description: A paginated list for staff; subclasses filter in get_queryset().
+      summary: Add a staff user
+      parameters:
+      - in: query
+        name: search
+        schema:
+          type: string
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StaffUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StaffUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StaffUserRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffUser'
+          description: ''
+  /api/v1/users/{id}:
+    get:
+      operationId: users_retrieve
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffUser'
+          description: ''
+    patch:
+      operationId: users_partial_update
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStaffUserRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StaffUser'
+          description: ''
+    delete:
+      operationId: users_destroy
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - users
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/voice/parse:
+    post:
+      operationId: voice_parse_create
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: Recorded clip or text → the complete updated order form
+      tags:
+      - voice
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VoiceStateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VoiceStateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VoiceStateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceParse'
+          description: ''
+  /api/v1/voice/token:
+    post:
+      operationId: voice_token_create
+      description: An endpoint for any signed-in staff member of the business (admin
+        or manager).
+      summary: A single-use Gemini Live session for live captions
+      tags:
+      - voice
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoiceSession'
+          description: ''
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name_uz:
+          type: string
+          maxLength: 100
+        name_ru:
+          type: string
+          maxLength: 100
+        products_count:
+          type: integer
+          readOnly: true
+          default: 0
+      required:
+      - id
+      - name_ru
+      - name_uz
+      - products_count
+    CategoryRef:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name_uz:
+          type: string
+          maxLength: 100
+        name_ru:
+          type: string
+          maxLength: 100
+      required:
+      - id
+      - name_ru
+      - name_uz
+    CategoryRequest:
+      type: object
+      properties:
+        name_uz:
+          type: string
+          minLength: 1
+          maxLength: 100
+        name_ru:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+      - name_ru
+      - name_uz
+    Client:
+      type: object
+      properties:
+        id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        tg_nick:
+          type: string
+        telegram:
+          type: boolean
+        lang:
+          type: string
+        orders_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - created_at
+      - first_name
+      - id
+      - lang
+      - last_name
+      - orders_count
+      - phone
+      - telegram
+      - tg_nick
+    ClientDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        tg_nick:
+          type: string
+        telegram:
+          type: boolean
+        lang:
+          type: string
+        orders_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        location:
+          type: string
+        orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+      required:
+      - created_at
+      - first_name
+      - id
+      - lang
+      - last_name
+      - location
+      - orders
+      - orders_count
+      - phone
+      - telegram
+      - tg_nick
+    DailyCount:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        count:
+          type: integer
+      required:
+      - count
+      - date
+    Dashboard:
+      type: object
+      properties:
+        orders:
+          $ref: '#/components/schemas/DashboardOrders'
+        clients:
+          $ref: '#/components/schemas/DashboardClients'
+        products:
+          $ref: '#/components/schemas/DashboardProducts'
+        categories:
+          $ref: '#/components/schemas/DashboardCategories'
+        by_status:
+          type: array
+          items:
+            $ref: '#/components/schemas/StatusCount'
+        daily:
+          type: array
+          items:
+            $ref: '#/components/schemas/DailyCount'
+        latest_orders:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+      required:
+      - by_status
+      - categories
+      - clients
+      - daily
+      - latest_orders
+      - orders
+      - products
+    DashboardCategories:
+      type: object
+      properties:
+        total:
+          type: integer
+      required:
+      - total
+    DashboardClients:
+      type: object
+      properties:
+        total:
+          type: integer
+        new_7_days:
+          type: integer
+      required:
+      - new_7_days
+      - total
+    DashboardOrders:
+      type: object
+      properties:
+        total:
+          type: integer
+        new:
+          type: integer
+        on_the_way:
+          type: integer
+        completed:
+          type: integer
+        last_7_days:
+          type: integer
+      required:
+      - completed
+      - last_7_days
+      - new
+      - on_the_way
+      - total
+    DashboardProducts:
+      type: object
+      properties:
+        total:
+          type: integer
+      required:
+      - total
+    DeliveryTypeEnum:
+      enum:
+      - pickup
+      - delivery
+      type: string
+      description: |-
+        * `pickup` - pickup
+        * `delivery` - delivery
+    EngineEnum:
+      enum:
+      - gemini
+      - local
+      type: string
+      description: |-
+        * `gemini` - gemini
+        * `local` - local
+    InitDataRequest:
+      type: object
+      properties:
+        init_data:
+          type: string
+          minLength: 1
+      required:
+      - init_data
+    Invite:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        qr_svg:
+          type: string
+        user:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+      required:
+      - expires_at
+      - qr_svg
+      - url
+      - user
+    InviteRequest:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          nullable: true
+    LangEnum:
+      enum:
+      - uz
+      - ru
+      type: string
+      description: |-
+        * `uz` - uz
+        * `ru` - ru
+    Link:
+      type: object
+      properties:
+        id:
+          type: integer
+        user:
+          $ref: '#/components/schemas/PersonRef'
+        telegram_id:
+          type: integer
+        first_name:
+          type: string
+        username:
+          type: string
+        lang:
+          type: string
+        notify_orders:
+          type: boolean
+        blocked:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - blocked
+      - created_at
+      - first_name
+      - id
+      - lang
+      - last_seen_at
+      - notify_orders
+      - telegram_id
+      - user
+      - username
+    LoginError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    LoginRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 30
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+      - phone
+    OrderClient:
+      type: object
+      properties:
+        id:
+          type: integer
+        first_name:
+          type: string
+        last_name:
+          type: string
+        phone:
+          type: string
+        tg_nick:
+          type: string
+      required:
+      - first_name
+      - id
+      - last_name
+      - phone
+      - tg_nick
+    OrderDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        source:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        customer_name:
+          type: string
+        phone:
+          type: string
+        total:
+          type: integer
+        items_count:
+          type: integer
+        client_id:
+          type: integer
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+        address:
+          type: string
+        lat:
+          type: string
+        lng:
+          type: string
+        delivery_type:
+          type: string
+        payment_method:
+          type: string
+        comment:
+          type: string
+        created_by:
+          allOf:
+          - $ref: '#/components/schemas/PersonRef'
+          nullable: true
+        client:
+          allOf:
+          - $ref: '#/components/schemas/OrderClient'
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLine'
+      required:
+      - address
+      - client
+      - client_id
+      - comment
+      - created_at
+      - created_by
+      - customer_name
+      - delivery_type
+      - id
+      - items
+      - items_count
+      - lat
+      - lng
+      - payment_method
+      - phone
+      - source
+      - status
+      - total
+      - updated_at
+    OrderLine:
+      type: object
+      properties:
+        product_id:
+          type: integer
+          nullable: true
+        name_uz:
+          type: string
+        name_ru:
+          type: string
+        quantity:
+          type: integer
+        price:
+          type: integer
+        total:
+          type: integer
+      required:
+      - name_ru
+      - name_uz
+      - price
+      - product_id
+      - quantity
+      - total
+    OrderStatusStatusEnum:
+      enum:
+      - ordered
+      - on_the_way
+      - completed
+      - rejected
+      type: string
+      description: |-
+        * `ordered` - ordered
+        * `on_the_way` - on_the_way
+        * `completed` - completed
+        * `rejected` - rejected
+    OrderSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        status:
+          type: string
+        source:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        customer_name:
+          type: string
+        phone:
+          type: string
+        total:
+          type: integer
+        items_count:
+          type: integer
+        client_id:
+          type: integer
+          nullable: true
+      required:
+      - client_id
+      - created_at
+      - customer_name
+      - id
+      - items_count
+      - phone
+      - source
+      - status
+      - total
+    PaginatedClientList:
+      type: object
+      required:
+      - count
+      - page
+      - pages
+      - results
+      properties:
+        count:
+          type: integer
+          example: 135
+        page:
+          type: integer
+          example: 1
+        pages:
+          type: integer
+          example: 7
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Client'
+    PaginatedOrderSummaryList:
+      type: object
+      required:
+      - count
+      - page
+      - pages
+      - results
+      properties:
+        count:
+          type: integer
+          example: 135
+        page:
+          type: integer
+          example: 1
+        pages:
+          type: integer
+          example: 7
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+    PaginatedProductList:
+      type: object
+      required:
+      - count
+      - page
+      - pages
+      - results
+      properties:
+        count:
+          type: integer
+          example: 135
+        page:
+          type: integer
+          example: 1
+        pages:
+          type: integer
+          example: 7
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+    PaginatedStaffUserList:
+      type: object
+      required:
+      - count
+      - page
+      - pages
+      - results
+      properties:
+        count:
+          type: integer
+          example: 135
+        page:
+          type: integer
+          example: 1
+        pages:
+          type: integer
+          example: 7
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StaffUser'
+    PatchedCategoryRequest:
+      type: object
+      properties:
+        name_uz:
+          type: string
+          minLength: 1
+          maxLength: 100
+        name_ru:
+          type: string
+          minLength: 1
+          maxLength: 100
+    PatchedClientUpdateRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        phone:
+          type: string
+          maxLength: 30
+        location:
+          type: string
+          maxLength: 255
+    PatchedLinkUpdateRequest:
+      type: object
+      properties:
+        notify_orders:
+          type: boolean
+    PatchedOrderStatusRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/OrderStatusStatusEnum'
+    PatchedProductWriteRequest:
+      type: object
+      description: 'Create / update (multipart when an image is attached). `image:
+        null` (or empty) removes the image.'
+      properties:
+        name_uz:
+          type: string
+          minLength: 1
+          maxLength: 255
+        name_ru:
+          type: string
+          minLength: 1
+          maxLength: 255
+        price:
+          type: integer
+          maximum: 1000000000
+          minimum: 0
+        desc_uz:
+          type: string
+          default: ''
+        desc_ru:
+          type: string
+          default: ''
+        unit_id:
+          type: integer
+          nullable: true
+        category_id:
+          type: integer
+          nullable: true
+        image:
+          type: string
+          format: binary
+          nullable: true
+    PatchedStaffUserRequest:
+      type: object
+      description: 'Read: StaffUser. Write: password required on create (8+ characters),
+        optional on update.'
+      properties:
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 30
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        is_active:
+          type: boolean
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+          maxLength: 128
+    PaymentMethodEnum:
+      enum:
+      - cash
+      - card
+      type: string
+      description: |-
+        * `cash` - cash
+        * `card` - card
+    PersonRef:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      required:
+      - id
+      - name
+    PosCategory:
+      type: object
+      description: A category of the point of sale (the shop's shape).
+      properties:
+        id:
+          type: integer
+        name_uz:
+          type: string
+        name_ru:
+          type: string
+      required:
+      - id
+      - name_ru
+      - name_uz
+    PosProduct:
+      type: object
+      description: A product of the point of sale (the shop's shape).
+      properties:
+        id:
+          type: integer
+        name_uz:
+          type: string
+        name_ru:
+          type: string
+        desc_uz:
+          type: string
+        desc_ru:
+          type: string
+        price:
+          type: integer
+        unit_uz:
+          type: string
+        unit_ru:
+          type: string
+        category_id:
+          type: integer
+          nullable: true
+        image:
+          type: string
+          nullable: true
+      required:
+      - category_id
+      - desc_ru
+      - desc_uz
+      - id
+      - image
+      - name_ru
+      - name_uz
+      - price
+      - unit_ru
+      - unit_uz
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        name_uz:
+          type: string
+        name_ru:
+          type: string
+        desc_uz:
+          type: string
+        desc_ru:
+          type: string
+        price:
+          type: integer
+        unit:
+          allOf:
+          - $ref: '#/components/schemas/Unit'
+          nullable: true
+        category:
+          allOf:
+          - $ref: '#/components/schemas/CategoryRef'
+          nullable: true
+        image:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - category
+      - created_at
+      - desc_ru
+      - desc_uz
+      - id
+      - image
+      - name_ru
+      - name_uz
+      - price
+      - unit
+    ProductWriteRequest:
+      type: object
+      description: 'Create / update (multipart when an image is attached). `image:
+        null` (or empty) removes the image.'
+      properties:
+        name_uz:
+          type: string
+          minLength: 1
+          maxLength: 255
+        name_ru:
+          type: string
+          minLength: 1
+          maxLength: 255
+        price:
+          type: integer
+          maximum: 1000000000
+          minimum: 0
+        desc_uz:
+          type: string
+          default: ''
+        desc_ru:
+          type: string
+          default: ''
+        unit_id:
+          type: integer
+          nullable: true
+        category_id:
+          type: integer
+          nullable: true
+        image:
+          type: string
+          format: binary
+          nullable: true
+      required:
+      - name_ru
+      - name_uz
+      - price
+    RoleEnum:
+      enum:
+      - admin
+      - manager
+      type: string
+      description: |-
+        * `admin` - admin
+        * `manager` - manager
+    SaleCreateRequest:
+      type: object
+      description: Documents the body of POST /sales.
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleLineRequest'
+        customer_name:
+          type: string
+        phone:
+          type: string
+        delivery_type:
+          $ref: '#/components/schemas/DeliveryTypeEnum'
+        address:
+          type: string
+        payment_method:
+          $ref: '#/components/schemas/PaymentMethodEnum'
+        status:
+          $ref: '#/components/schemas/SaleCreateStatusEnum'
+        comment:
+          type: string
+      required:
+      - items
+    SaleCreateStatusEnum:
+      enum:
+      - ordered
+      - on_the_way
+      - completed
+      type: string
+      description: |-
+        * `ordered` - ordered
+        * `on_the_way` - on_the_way
+        * `completed` - completed
+    SaleCreated:
+      type: object
+      properties:
+        order:
+          $ref: '#/components/schemas/SaleSummary'
+        stats:
+          $ref: '#/components/schemas/SalesStats'
+      required:
+      - order
+      - stats
+    SaleLineRequest:
+      type: object
+      properties:
+        product_id:
+          type: integer
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+      - product_id
+      - quantity
+    SaleSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        phone:
+          type: string
+        status:
+          type: string
+        total:
+          type: integer
+        items_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - created_at
+      - id
+      - items_count
+      - name
+      - phone
+      - status
+      - total
+    Sales:
+      type: object
+      properties:
+        categories:
+          type: array
+          items:
+            $ref: '#/components/schemas/PosCategory'
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/PosProduct'
+        recent:
+          type: array
+          items:
+            $ref: '#/components/schemas/SaleSummary'
+        stats:
+          $ref: '#/components/schemas/SalesStats'
+        voice:
+          $ref: '#/components/schemas/VoiceFeatures'
+      required:
+      - categories
+      - products
+      - recent
+      - stats
+      - voice
+    SalesStats:
+      type: object
+      properties:
+        count:
+          type: integer
+        revenue:
+          type: integer
+        average:
+          type: integer
+        all_orders_today:
+          type: integer
+      required:
+      - all_orders_today
+      - average
+      - count
+      - revenue
+    StaffBot:
+      type: object
+      properties:
+        username:
+          type: string
+        alive:
+          type: boolean
+      required:
+      - alive
+      - username
+    StaffBusiness:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        logo:
+          type: string
+          nullable: true
+        brand_color:
+          type: string
+        shop_url:
+          type: string
+          format: uri
+      required:
+      - brand_color
+      - logo
+      - name
+      - shop_url
+      - slug
+    StaffMe:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/StaffUser'
+        business:
+          $ref: '#/components/schemas/StaffBusiness'
+      required:
+      - business
+      - user
+    StaffUser:
+      type: object
+      description: 'Read: StaffUser. Write: password required on create (8+ characters),
+        optional on update.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        phone_number:
+          type: string
+          maxLength: 30
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - phone_number
+      - role
+    StaffUserRequest:
+      type: object
+      description: 'Read: StaffUser. Write: password required on create (8+ characters),
+        optional on update.'
+      properties:
+        phone_number:
+          type: string
+          minLength: 1
+          maxLength: 30
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type: string
+          maxLength: 100
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        is_active:
+          type: boolean
+        password:
+          type: string
+          writeOnly: true
+          minLength: 8
+          maxLength: 128
+      required:
+      - phone_number
+      - role
+    StatusCount:
+      type: object
+      properties:
+        status:
+          type: string
+        count:
+          type: integer
+      required:
+      - count
+      - status
+    Telegram:
+      type: object
+      properties:
+        bot:
+          allOf:
+          - $ref: '#/components/schemas/StaffBot'
+          nullable: true
+        voice_ready:
+          type: boolean
+        my_links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        team_links:
+          type: array
+          items:
+            $ref: '#/components/schemas/Link'
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/PersonRef'
+      required:
+      - bot
+      - my_links
+      - team_links
+      - users
+      - voice_ready
+    Unit:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name_uz:
+          type: string
+          maxLength: 100
+        name_ru:
+          type: string
+          maxLength: 100
+      required:
+      - id
+      - name_ru
+      - name_uz
+    UnitRequest:
+      type: object
+      properties:
+        name_uz:
+          type: string
+          minLength: 1
+          maxLength: 100
+        name_ru:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+      - name_ru
+      - name_uz
+    VoiceFeatures:
+      type: object
+      properties:
+        gemini:
+          type: boolean
+        live:
+          type: boolean
+      required:
+      - gemini
+      - live
+    VoiceParse:
+      type: object
+      properties:
+        result:
+          type: object
+          additionalProperties: {}
+        engine:
+          $ref: '#/components/schemas/EngineEnum'
+      required:
+      - engine
+      - result
+    VoiceSession:
+      type: object
+      properties:
+        token:
+          type: string
+        url:
+          type: string
+        setup:
+          type: object
+          additionalProperties: {}
+      required:
+      - setup
+      - token
+      - url
+    VoiceStateRequest:
+      type: object
+      description: 'Documents POST /voice/parse (JSON form; the audio form is multipart:
+        audio, state, live_text, lang).'
+      properties:
+        text:
+          type: string
+        state:
+          type: object
+          additionalProperties: {}
+        lang:
+          $ref: '#/components/schemas/LangEnum'
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

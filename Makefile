@@ -1,0 +1,45 @@
+# Everyday commands. Each part also works on its own — see its README.
+.PHONY: up down logs ps test test-backend test-bot test-ui e2e schema test-db
+
+up:
+	docker compose up -d --build
+
+down:
+	docker compose down
+
+logs:
+	docker compose logs -f --tail=100
+
+ps:
+	docker compose ps
+
+test: test-backend test-bot test-ui
+
+# A throwaway PostgreSQL for the backend tests (config/test_settings.py → localhost:55433).
+test-db:
+	@docker inspect dh-backend-test-db >/dev/null 2>&1 || docker run --rm -d --name dh-backend-test-db \
+		-e POSTGRES_USER=deliveryhub -e POSTGRES_PASSWORD=test -e POSTGRES_DB=deliveryhub -p 55433:5432 postgres:16
+	@until docker exec dh-backend-test-db pg_isready -U deliveryhub >/dev/null 2>&1; do sleep 1; done
+
+test-backend: test-db
+	cd backend && .venv/bin/pytest -q && .venv/bin/flake8 api apps config tests scripts manage.py
+
+test-bot:
+	cd bot && $(MAKE) test
+
+test-ui:
+	cd client-ui && npm test && npm run lint && npm run build
+	cd admin-ui && npm test && npm run lint && npm run build
+	cd deliveryhub-ui && npm test && npm run lint && npm run build
+
+# End-to-end tests against the running stack (make up); the businesses they open are deleted afterwards.
+e2e:
+	cd e2e && npm ci --no-audit --no-fund --silent && npx playwright test; status=$$?; \
+		docker exec deliveryhub_backend python manage.py delete_business --prefix e2e- --yes; exit $$status
+
+# OpenAPI files of the three APIs (docs/openapi/*.yaml) from the backend code.
+schema:
+	cd backend && for api in shop admin platform; do \
+		DJANGO_SETTINGS_MODULE=config.test_settings .venv/bin/python manage.py spectacular \
+			--urlconf config.urls.$$api --validate --file ../docs/openapi/$$api.yaml; \
+	done

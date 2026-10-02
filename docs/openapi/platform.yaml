@@ -1,0 +1,768 @@
+openapi: 3.0.3
+info:
+  title: DeliveryHub API
+  version: v1
+  description: See docs/api.md for the conventions (errors, pagination, authentication).
+paths:
+  /api/v1/auth/csrf:
+    get:
+      operationId: auth_csrf_retrieve
+      summary: Set the csrftoken cookie
+      tags:
+      - auth
+      security:
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/login:
+    post:
+      operationId: auth_login_create
+      description: POST {"phone", "password"} → the `me` payload of the API; 400 invalid_credentials.
+      summary: Sign in with phone and password
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformMe'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginError'
+          description: ''
+  /api/v1/auth/logout:
+    post:
+      operationId: auth_logout_create
+      summary: Sign out
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '204':
+          description: No response body
+  /api/v1/auth/me:
+    get:
+      operationId: auth_me_retrieve
+      summary: The signed-in member of our staff
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformMe'
+          description: ''
+  /api/v1/businesses:
+    get:
+      operationId: businesses_list
+      summary: All businesses with today's numbers
+      tags:
+      - businesses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Businesses'
+          description: ''
+    post:
+      operationId: businesses_create
+      summary: 'Open a business: its schema, addresses and the owner''s admin account'
+      tags:
+      - businesses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BusinessCreateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BusinessCreateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BusinessCreateRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessCreated'
+          description: ''
+  /api/v1/businesses/{slug}:
+    get:
+      operationId: businesses_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - businesses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessDetail'
+          description: ''
+    patch:
+      operationId: businesses_partial_update
+      summary: Edit the profile
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - businesses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBusinessProfileRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBusinessProfileRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBusinessProfileRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessDetail'
+          description: ''
+  /api/v1/businesses/{slug}/bots:
+    post:
+      operationId: businesses_bots_create
+      summary: Connect a bot with a token from @BotFather
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - businesses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BotConnectRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BotConnectRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BotConnectRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectedBot'
+          description: ''
+  /api/v1/businesses/{slug}/bots/{role}:
+    delete:
+      operationId: businesses_bots_destroy
+      summary: Disconnect a bot
+      parameters:
+      - in: path
+        name: role
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - businesses
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/businesses/{slug}/bots/setup-link:
+    post:
+      operationId: businesses_bots_setup_link_create
+      summary: A link to our platform bot that creates both bots in two taps
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - businesses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BotSetupLink'
+          description: ''
+  /api/v1/businesses/{slug}/owner-password:
+    post:
+      operationId: businesses_owner_password_create
+      summary: A new password for the owner (shown once)
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - businesses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Credentials'
+          description: ''
+  /api/v1/businesses/{slug}/status:
+    post:
+      operationId: businesses_status_create
+      summary: Suspend or activate (a suspended business answers 503 everywhere)
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - businesses
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatusRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StatusRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StatusRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessDetail'
+          description: ''
+  /api/v1/businesses/check-slug:
+    get:
+      operationId: businesses_check_slug_retrieve
+      summary: Is this address free?
+      parameters:
+      - in: query
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - businesses
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SlugCheck'
+          description: ''
+components:
+  schemas:
+    Bot:
+      type: object
+      properties:
+        username:
+          type: string
+        alive:
+          type: boolean
+          description: The bot service polls it right now
+        created_via:
+          $ref: '#/components/schemas/CreatedViaEnum'
+      required:
+      - alive
+      - created_via
+      - username
+    BotConnectRequest:
+      type: object
+      properties:
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+        token:
+          type: string
+          minLength: 1
+          maxLength: 100
+      required:
+      - role
+      - token
+    BotSetupLink:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        qr_svg:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+      required:
+      - expires_at
+      - qr_svg
+      - url
+    Bots:
+      type: object
+      properties:
+        client:
+          allOf:
+          - $ref: '#/components/schemas/Bot'
+          nullable: true
+        admin:
+          allOf:
+          - $ref: '#/components/schemas/Bot'
+          nullable: true
+      required:
+      - admin
+      - client
+    BusinessCard:
+      type: object
+      description: 'Needs `request` in the context (addresses follow the style of
+        the request: public or *.localhost).'
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        logo:
+          type: string
+          nullable: true
+        brand_color:
+          type: string
+        tagline:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        links:
+          $ref: '#/components/schemas/Links'
+        stats:
+          $ref: '#/components/schemas/Stats'
+        bots:
+          $ref: '#/components/schemas/Bots'
+      required:
+      - bots
+      - brand_color
+      - created_at
+      - links
+      - logo
+      - name
+      - slug
+      - stats
+      - status
+      - tagline
+    BusinessCreateRequest:
+      type: object
+      description: 'Editable profile; `logo: null` (or empty) removes the logo.'
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        tagline:
+          type: string
+          maxLength: 200
+        support_phone:
+          type: string
+          maxLength: 30
+        delivery_time:
+          type: string
+          maxLength: 20
+        min_order:
+          type: integer
+          maximum: 100000000
+          minimum: 0
+        brand_color:
+          type: string
+          maxLength: 7
+        logo:
+          type: string
+          format: binary
+          nullable: true
+        slug:
+          type: string
+          minLength: 1
+          description: '3–30 characters: a-z, 0-9, "-"'
+          maxLength: 40
+        owner_name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        owner_phone:
+          type: string
+          minLength: 1
+          maxLength: 30
+        owner_password:
+          description: Empty → generated
+          oneOf:
+          - type: string
+            maxLength: 128
+            minLength: 8
+          - type: string
+            maxLength: 0
+      required:
+      - name
+      - owner_name
+      - owner_phone
+      - slug
+    BusinessCreated:
+      type: object
+      properties:
+        business:
+          $ref: '#/components/schemas/BusinessDetail'
+        credentials:
+          $ref: '#/components/schemas/Credentials'
+      required:
+      - business
+      - credentials
+    BusinessDetail:
+      type: object
+      description: 'Needs `request` in the context (addresses follow the style of
+        the request: public or *.localhost).'
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        logo:
+          type: string
+          nullable: true
+        brand_color:
+          type: string
+        tagline:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        links:
+          $ref: '#/components/schemas/Links'
+        stats:
+          $ref: '#/components/schemas/Stats'
+        bots:
+          $ref: '#/components/schemas/Bots'
+        support_phone:
+          type: string
+        delivery_time:
+          type: string
+        min_order:
+          type: integer
+        owner:
+          allOf:
+          - $ref: '#/components/schemas/Owner'
+          nullable: true
+        platform_bot:
+          allOf:
+          - $ref: '#/components/schemas/PlatformBot'
+          nullable: true
+        missing_roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/MissingRolesEnum'
+      required:
+      - bots
+      - brand_color
+      - created_at
+      - delivery_time
+      - links
+      - logo
+      - min_order
+      - missing_roles
+      - name
+      - owner
+      - platform_bot
+      - slug
+      - stats
+      - status
+      - support_phone
+      - tagline
+    BusinessTotals:
+      type: object
+      properties:
+        businesses:
+          type: integer
+        active:
+          type: integer
+        orders_today:
+          type: integer
+        revenue_today:
+          type: integer
+      required:
+      - active
+      - businesses
+      - orders_today
+      - revenue_today
+    Businesses:
+      type: object
+      properties:
+        domain:
+          type: string
+          description: 'PLATFORM_DOMAIN: businesses live at <slug>.<domain>'
+        totals:
+          $ref: '#/components/schemas/BusinessTotals'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BusinessCard'
+      required:
+      - domain
+      - results
+      - totals
+    ConnectedBot:
+      type: object
+      properties:
+        bot:
+          $ref: '#/components/schemas/Bot'
+      required:
+      - bot
+    CreatedViaEnum:
+      enum:
+      - managed
+      - token
+      type: string
+      description: |-
+        * `managed` - managed
+        * `token` - token
+    Credentials:
+      type: object
+      properties:
+        phone:
+          type: string
+        password:
+          type: string
+      required:
+      - password
+      - phone
+    ErrorEnum:
+      enum:
+      - slug_invalid
+      - slug_reserved
+      - slug_taken
+      type: string
+      description: |-
+        * `slug_invalid` - slug_invalid
+        * `slug_reserved` - slug_reserved
+        * `slug_taken` - slug_taken
+    Links:
+      type: object
+      properties:
+        shop:
+          type: string
+          format: uri
+        admin:
+          type: string
+          format: uri
+      required:
+      - admin
+      - shop
+    LoginError:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    LoginRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          minLength: 1
+          maxLength: 30
+        password:
+          type: string
+          minLength: 1
+          maxLength: 128
+      required:
+      - password
+      - phone
+    MissingRolesEnum:
+      enum:
+      - client
+      - admin
+      type: string
+      description: |-
+        * `client` - Customers
+        * `admin` - Staff
+    Owner:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+      required:
+      - name
+      - phone
+    PatchedBusinessProfileRequest:
+      type: object
+      description: 'Editable profile; `logo: null` (or empty) removes the logo.'
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 120
+        tagline:
+          type: string
+          maxLength: 200
+        support_phone:
+          type: string
+          maxLength: 30
+        delivery_time:
+          type: string
+          maxLength: 20
+        min_order:
+          type: integer
+          maximum: 100000000
+          minimum: 0
+        brand_color:
+          type: string
+          maxLength: 7
+        logo:
+          type: string
+          format: binary
+          nullable: true
+    PlatformBot:
+      type: object
+      properties:
+        username:
+          type: string
+      required:
+      - username
+    PlatformMe:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/PlatformUser'
+      required:
+      - user
+    PlatformUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        phone_number:
+          type: string
+        first_name:
+          type: string
+      required:
+      - first_name
+      - id
+      - phone_number
+    RoleEnum:
+      enum:
+      - client
+      - admin
+      type: string
+      description: |-
+        * `client` - client
+        * `admin` - admin
+    SlugCheck:
+      type: object
+      properties:
+        available:
+          type: boolean
+        error:
+          $ref: '#/components/schemas/ErrorEnum'
+      required:
+      - available
+    Stats:
+      type: object
+      properties:
+        orders_today:
+          type: integer
+        revenue_today:
+          type: integer
+        orders_total:
+          type: integer
+        customers:
+          type: integer
+      required:
+      - customers
+      - orders_today
+      - orders_total
+      - revenue_today
+    StatusEnum:
+      enum:
+      - active
+      - suspended
+      type: string
+      description: |-
+        * `active` - active
+        * `suspended` - suspended
+    StatusRequest:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+      required:
+      - status
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

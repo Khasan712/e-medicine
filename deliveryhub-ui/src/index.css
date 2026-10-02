@@ -1,0 +1,181 @@
+@import 'tailwindcss';
+
+@theme {
+  --font-sans: 'Manrope Variable', 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
+
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.04), 0 1px 3px rgb(15 23 42 / 0.05);
+  --shadow-lift: 0 1px 2px rgb(15 23 42 / 0.04), 0 12px 32px -12px rgb(79 70 229 / 0.28);
+  --shadow-pop: 0 24px 64px -16px rgb(15 23 42 / 0.32), 0 2px 6px rgb(15 23 42 / 0.06);
+
+  --animate-enter: enter 0.32s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+  --animate-pop: pop 0.22s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+  --animate-toast-in: toast-in 0.32s cubic-bezier(0.21, 1.02, 0.73, 1) both;
+  --animate-toast-out: toast-out 0.2s ease-in both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-alive: alive 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  --animate-progress: progress 1.1s ease-in-out infinite;
+
+  @keyframes enter {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes pop {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px) scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes toast-out {
+    to {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+  }
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+  @keyframes progress {
+    from {
+      transform: translateX(-100%);
+    }
+    to {
+      transform: translateX(300%);
+    }
+  }
+  @keyframes alive {
+    0% {
+      transform: scale(1);
+      opacity: 0.7;
+    }
+    80%,
+    100% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html {
+    scrollbar-gutter: stable;
+    background-color: var(--color-slate-50);
+    color: var(--color-slate-900);
+    font-family: var(--font-sans);
+    font-optical-sizing: auto;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  ::selection {
+    background-color: var(--color-indigo-200);
+    color: var(--color-indigo-950);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-indigo-500);
+    outline-offset: 2px;
+  }
+
+  /* Headings and regions focused by the app (not by Tab) show no ring. */
+  [tabindex='-1']:focus {
+    outline: none;
+  }
+
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary,
+  label[for],
+  input[type='color'],
+  input[type='radio'] {
+    cursor: pointer;
+  }
+
+  /* Modal dialogs (native <dialog>): centered card over a blurred backdrop. */
+  dialog {
+    margin: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    max-width: calc(100vw - 2rem);
+    overflow: visible;
+  }
+  dialog::backdrop {
+    background: rgb(15 23 42 / 0.42);
+    backdrop-filter: blur(3px);
+  }
+  dialog[open] {
+    animation: var(--animate-pop);
+  }
+  dialog[open]::backdrop {
+    animation: backdrop-in 0.2s ease-out both;
+  }
+
+  /* No page scrolling behind an open modal. */
+  html:has(dialog[open]) {
+    overflow: hidden;
+  }
+}
+
+@keyframes backdrop-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@utility skeleton {
+  background-image: linear-gradient(
+    90deg,
+    var(--color-slate-200) 0%,
+    var(--color-slate-100) 40%,
+    var(--color-slate-200) 80%
+  );
+  background-size: 200% 100%;
+  animation: var(--animate-shimmer);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

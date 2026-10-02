@@ -1,0 +1,41 @@
+import type { RouteObject } from 'react-router'
+import { AppLayout } from './components/AppLayout'
+import { RequireAuth, Splash } from './components/RequireAuth'
+import { Root } from './components/Root'
+import { BusinessesPage } from './pages/BusinessesPage'
+import { loadBusinessPage, loadCreatePage } from './pages/lazy'
+import { LoginPage } from './pages/LoginPage'
+import { NotFoundPage, RouteError } from './pages/NotFoundPage'
+
+/** The same addresses as the old Django panel: /, /new, /b/<slug>, /login. */
+export const routes: RouteObject[] = [
+  {
+    element: <Root />,
+    errorElement: <RouteError />,
+    // Shown while the first page's code loads (a direct visit to /new or /b/<slug>).
+    hydrateFallbackElement: <Splash />,
+    children: [
+      { path: 'login', element: <LoginPage /> },
+      {
+        element: <RequireAuth />,
+        children: [
+          {
+            element: <AppLayout />,
+            children: [
+              { index: true, element: <BusinessesPage /> },
+              {
+                path: 'new',
+                lazy: async () => ({ Component: (await loadCreatePage()).BusinessCreatePage }),
+              },
+              {
+                path: 'b/:slug',
+                lazy: async () => ({ Component: (await loadBusinessPage()).BusinessPage }),
+              },
+              { path: '*', element: <NotFoundPage /> },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+]

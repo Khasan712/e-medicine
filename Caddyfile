@@ -1,0 +1,45 @@
+# The web container: one entry point for every host of the platform (docs/architecture.md).
+#   /api/*, /healthz          → backend (it picks the business and the API by the host)
+#   /media/*                  → uploaded files (product images, logos)
+#   /django-admin/*, /static/* → backend (Django admin for our staff, on the platform host)
+#   everything else           → the UI of the host: our panel, a business's admin panel or its shop
+# TLS ends in front of this container (the tunnel or a load balancer), so it serves plain HTTP.
+{
+	auto_https off
+	admin off
+	servers {
+		trusted_proxies static private_ranges
+	}
+}
+
+:80 {
+	encode zstd gzip
+
+	@backend path /api/* /healthz /django-admin /django-admin/* /static/*
+	handle @backend {
+		request_body {
+			max_size 25MB
+		}
+		reverse_proxy backend:8000
+	}
+
+	handle_path /media/* {
+		root * /srv/media
+		header Cache-Control "public, max-age=86400"
+		file_server
+	}
+
+	@platform expression `{host}.startsWith("{$PLATFORM_HUB_SUBDOMAIN:deliveryhub}.") || {host}.startsWith("hub.") || {host} == "localhost"`
+	handle @platform {
+		reverse_proxy deliveryhub-ui:80
+	}
+
+	@admin expression `{host}.matches("^[a-z0-9-]+-admin[.]")`
+	handle @admin {
+		reverse_proxy admin-ui:80
+	}
+
+	handle {
+		reverse_proxy client-ui:80
+	}
+}
