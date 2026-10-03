@@ -114,7 +114,7 @@ describe('new business', () => {
     expect(await navigator.clipboard.readText()).toBe(
       'Admin panel: https://yoqimli-taom-admin.portex.uz/\nTelefon: +998901112233\nParol: Gen-3rated-Pw',
     )
-    expect(within(panel).getByRole('button', { name: 'Nusxalandi' })).toBeInTheDocument()
+    expect(await within(panel).findByRole('button', { name: 'Nusxalandi' })).toBeInTheDocument()
 
     // Gone from the history entry: coming back to the page does not show them again.
     await waitFor(() => expect(router.state.location.state).toBeNull())

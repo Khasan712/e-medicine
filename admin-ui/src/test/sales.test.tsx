@@ -85,6 +85,9 @@ describe('point of sale', () => {
     expect(within(panel).getByText("50 000 so'm")).toBeInTheDocument() // 32 000 + 2 × 9 000
 
     await user.type(within(panel).getByLabelText('Mijoz ismi'), 'Aziz')
+    // Demo orders are spread around the real clock, so today's count is read, not assumed.
+    const salesToday = () => Number(screen.getByText('Bugungi sotuvlar').nextElementSibling?.textContent)
+    const before = salesToday()
     await user.click(within(panel).getByRole('button', { name: 'Buyurtma yaratish' }))
 
     expect(await screen.findByText('Buyurtma yaratildi · #1000')).toBeInTheDocument()
@@ -105,7 +108,7 @@ describe('point of sale', () => {
     await waitFor(() => expect(within(orderPanel()).getByText('Mahsulot tanlang yoki ovoz bilan ayting')).toBeInTheDocument())
     const recent = screen.getByRole('region', { name: "So'nggi sotuvlar" })
     expect(within(recent).getAllByRole('link')[1]).toHaveTextContent('#1000')
-    expect(screen.getByText('Bugungi sotuvlar').nextElementSibling).toHaveTextContent('2')
+    await waitFor(() => expect(salesToday()).toBe(before + 1))
   })
 
   it('moves the status with the delivery type until it is chosen by hand', async () => {
