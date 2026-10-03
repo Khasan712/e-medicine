@@ -1,7 +1,8 @@
 /**
  * The business `brand_color` drives the accent of the whole shop. From one hex colour we derive the CSS
- * variables the design uses: a gradient partner, a readable text colour on top of the brand fill and
- * versions of the brand that stay readable as text on light and dark surfaces.
+ * variables the design uses: a gradient partner, a readable text colour on top of the brand fill, versions
+ * of the brand that stay readable as text on light and dark surfaces, the fill of buttons on the dark theme
+ * (a navy or near-black brand would vanish there) and the banner colours of both themes.
  */
 
 export const DEFAULT_BRAND = '#FF5A1F'
@@ -13,7 +14,17 @@ interface Rgb {
 }
 
 export type BrandVariables = Record<
-  '--brand' | '--brand-2' | '--brand-ink' | '--brand-text-light' | '--brand-text-dark',
+  | '--brand'
+  | '--brand-2'
+  | '--brand-ink'
+  | '--brand-text-light'
+  | '--brand-text-dark'
+  | '--brand-fill-dark'
+  | '--brand-ink-dark'
+  | '--brand-hero-light'
+  | '--brand-hero-ink-light'
+  | '--brand-hero-dark'
+  | '--brand-hero-ink-dark',
   string
 >
 
@@ -99,18 +110,35 @@ function readableOn(color: Rgb, background: Rgb, target: number): Rgb {
   return darker ? { r: 22, g: 22, b: 26 } : WHITE
 }
 
+function mix(a: Rgb, b: Rgb, amount: number): Rgb {
+  return { r: a.r + (b.r - a.r) * amount, g: a.g + (b.g - a.g) * amount, b: a.b + (b.b - a.b) * amount }
+}
+
+/** White text on a fill unless the fill is light (yellow, lime, a lightened navy, …). */
+function inkOn(fill: Rgb): string {
+  return contrast(fill, WHITE) >= 2.4 ? '#ffffff' : '#16161a'
+}
+
 export function brandVariables(color: string | null | undefined): BrandVariables {
   const rgb = parseHex(color) ?? parseHex(DEFAULT_BRAND)!
   const [h, s, l] = rgbToHsl(rgb)
   const partner = hslToRgb(h - 28, Math.min(1, s * 1.05), Math.min(0.62, Math.max(0.42, l + 0.02)))
-  // White text on the brand fill unless the brand is light (yellow, lime, …).
-  const ink = contrast(rgb, WHITE) >= 2.4 ? '#ffffff' : '#16161a'
+  // The dark theme: a brand that disappears on its surface (navy, near-black) turns into a light fill.
+  const fillDark = contrast(rgb, DARK_SURFACE) < 1.7 ? mix(rgb, WHITE, 0.86) : rgb
+  // The banner: the brand itself; on the dark theme a deep version of it (a near-black brand stays as it is).
+  const heroDark = luminance(rgb) < 0.06 ? mix(rgb, WHITE, 0.04) : mix(rgb, DARK_SURFACE, 0.7)
   return {
     '--brand': toHex(rgb),
     '--brand-2': toHex(partner),
-    '--brand-ink': ink,
+    '--brand-ink': inkOn(rgb),
     '--brand-text-light': toHex(readableOn(rgb, LIGHT_SURFACE, 3)),
-    '--brand-text-dark': toHex(readableOn(rgb, DARK_SURFACE, 3.2)),
+    '--brand-text-dark': toHex(readableOn(fillDark, DARK_SURFACE, 3.2)),
+    '--brand-fill-dark': toHex(fillDark),
+    '--brand-ink-dark': inkOn(fillDark),
+    '--brand-hero-light': toHex(rgb),
+    '--brand-hero-ink-light': inkOn(rgb),
+    '--brand-hero-dark': toHex(heroDark),
+    '--brand-hero-ink-dark': inkOn(heroDark),
   }
 }
 

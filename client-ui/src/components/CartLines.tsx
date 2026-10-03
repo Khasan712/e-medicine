@@ -1,6 +1,7 @@
 import { useI18n } from '../i18n/i18n'
 import { haptic } from '../lib/telegram'
 import { useCart, type CartLine } from '../state/cart'
+import { useCatalog } from '../state/catalog'
 import { useNav } from '../state/nav'
 import { Icon } from './Icon'
 import { ProductImage } from './ProductImage'
@@ -8,41 +9,49 @@ import { Stepper } from './Stepper'
 
 /** Lines of the cart with steppers (sheet on phones, side panel on desktop). */
 export function CartLines({ lines }: { lines: CartLine[] }) {
-  const { name, money } = useI18n()
+  const { t, name, unit, money } = useI18n()
   const cart = useCart()
   const { openSheet } = useNav()
   return (
-    <ul className="-mx-2">
+    <ul>
       {lines.map(({ product, qty, total }) => {
         const title = name(product)
+        const unitName = unit(product)
         return (
-          <li key={product.id} className="flex animate-[fade-in_0.2s_ease_both] items-center gap-3 rounded-[14px] px-2 py-2.5">
+          <li key={product.id} className="flex animate-[fade-in_0.2s_ease_both] items-center gap-3 border-t border-line py-3">
             <button
               type="button"
               onClick={() => openSheet({ type: 'product', id: product.id })}
               aria-label={title}
-              className="size-[58px] shrink-0 overflow-hidden rounded-[14px]"
+              className="size-[60px] shrink-0 overflow-hidden rounded-[14px]"
             >
               <ProductImage src={product.image} name={title} className="size-full" letterClassName="text-xl" />
             </button>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[14.5px] font-bold">{title}</div>
-              <div className="tabular mt-0.5 text-[13.5px] font-bold text-muted">{money(total)}</div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1">
+              <div className="flex items-baseline justify-between gap-2.5">
+                <span className="truncate text-[14.5px] font-bold">{title}</span>
+                <span className="tabular shrink-0 text-[14.5px] font-extrabold">{money(total)}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2.5">
+                <span className="tabular truncate text-[12.5px] font-semibold text-muted">
+                  {unitName ? t('perUnitPrice', { price: money(product.price), unit: unitName }) : money(product.price)}
+                </span>
+                <Stepper
+                  variant="soft"
+                  value={qty}
+                  name={title}
+                  trashAtMin
+                  onIncrement={() => {
+                    cart.increment(product.id)
+                    haptic('light')
+                  }}
+                  onDecrement={() => {
+                    cart.decrement(product.id)
+                    haptic('select')
+                  }}
+                />
+              </div>
             </div>
-            <Stepper
-              variant="soft"
-              value={qty}
-              name={title}
-              trashAtMin
-              onIncrement={() => {
-                cart.increment(product.id)
-                haptic('light')
-              }}
-              onDecrement={() => {
-                cart.decrement(product.id)
-                haptic('select')
-              }}
-            />
           </li>
         )
       })}
@@ -50,9 +59,10 @@ export function CartLines({ lines }: { lines: CartLine[] }) {
   )
 }
 
-/** Minimum-order progress and the total. */
-export function CartSummary() {
+/** Minimum-order progress, the delivery time (in the cart) and the total. */
+export function CartSummary({ showDelivery = false }: { showDelivery?: boolean }) {
   const { t, money } = useI18n()
+  const { business } = useCatalog()
   const { total, minOrder, left } = useCart()
   const progress = minOrder > 0 ? Math.min(100, Math.round((total / minOrder) * 100)) : 100
   return (
@@ -75,9 +85,18 @@ export function CartSummary() {
           </div>
         </div>
       )}
-      <div className="mb-3.5 flex items-baseline justify-between text-xl font-extrabold tracking-[-0.02em]">
-        <span>{t('total')}</span>
-        <span className="tabular" data-testid="cart-total">
+      {showDelivery && business?.delivery_time ? (
+        <div className="mb-1.5 flex items-center justify-between gap-3 text-[13.5px] font-semibold text-muted">
+          <span className="inline-flex items-center gap-1.5">
+            <Icon name="clock" className="size-[15px]" />
+            {t('delivery')}
+          </span>
+          <span>{t('deliveryTime', { time: business.delivery_time })}</span>
+        </div>
+      ) : null}
+      <div className="mb-3.5 flex items-baseline justify-between gap-3">
+        <span className="text-base font-extrabold">{t('total')}</span>
+        <span className="tabular text-[22px] font-extrabold tracking-[-0.02em]" data-testid="cart-total">
           {money(total)}
         </span>
       </div>

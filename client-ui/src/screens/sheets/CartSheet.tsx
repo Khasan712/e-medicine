@@ -62,7 +62,7 @@ function CartSheetContent({ open, onClose }: { open: boolean; onClose: () => voi
       <SheetFooter>
         {hasItems ? (
           <>
-            <CartSummary />
+            <CartSummary showDelivery />
             {!inTelegram && (
               <Button block disabled={cart.belowMinimum} onClick={startCheckout}>
                 <span className="flex-1 text-left">{t('checkout')}</span>

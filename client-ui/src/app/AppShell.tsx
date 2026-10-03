@@ -1,13 +1,17 @@
+import { useMemo, useState } from 'react'
 import { Route, Routes, useLocation } from 'react-router'
 import { isApiError } from '../api/client'
 import { CartBar } from '../components/CartBar'
 import { Header } from '../components/Header'
 import { Toaster } from '../components/Toaster'
 import { useI18n } from '../i18n/i18n'
+import { cn } from '../lib/cn'
+import { pageWidth } from '../lib/useMediaQuery'
 import { useScrollRestoration } from '../lib/useScrollRestoration'
 import { useBackButton } from '../lib/useTelegram'
 import { useCatalog } from '../state/catalog'
 import { useNav } from '../state/nav'
+import { SearchContext } from '../state/search'
 import { CheckoutScreen } from '../screens/checkout/CheckoutScreen'
 import { MenuScreen } from '../screens/menu/MenuScreen'
 import { OrderScreen } from '../screens/orders/OrderScreen'
@@ -23,6 +27,8 @@ export function AppShell() {
   const catalog = useCatalog()
   const location = useLocation()
   const nav = useNav()
+  const [query, setQuery] = useState('')
+  const search = useMemo(() => ({ query, setQuery }), [query])
   useScrollRestoration()
   // Telegram: the native back button closes sheets and leaves screens (browser history does the same on the web).
   useBackButton(location.pathname !== '/' || nav.sheet !== null, nav.back)
@@ -33,7 +39,7 @@ export function AppShell() {
   }
 
   return (
-    <>
+    <SearchContext value={search}>
       <a
         href="#main"
         className="sr-only z-[200] rounded-xl bg-ink px-4 py-2 font-bold text-bg focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
@@ -41,7 +47,7 @@ export function AppShell() {
         {t('skipToContent')}
       </a>
       <Header />
-      <main id="main" tabIndex={-1} className="mx-auto w-full max-w-[1240px] px-4 outline-none md:px-6">
+      <main id="main" tabIndex={-1} className={cn('mx-auto w-full px-4 outline-none md:px-6', pageWidth(location.pathname))}>
         <div key={location.pathname} className="animate-[fade-in_0.24s_ease_both]">
           <Routes location={location}>
             <Route path="/" element={<MenuScreen />} />
@@ -58,6 +64,6 @@ export function AppShell() {
       <CartSheet />
       <AuthSheet />
       <Toaster />
-    </>
+    </SearchContext>
   )
 }

@@ -7,11 +7,14 @@ business. React 19 · Vite 8 · TypeScript 6 (strict) · React Router 7 · TanSt
 **Features**
 
 - Menu: business header (logo, name, delivery time), brand hero (tagline, chips, popular photos), search
-  (Uzbek/Russian names, apostrophe-tolerant), sticky category chips with scroll-spy, "popular" row, product
-  cards with steppers, product details sheet. `brand_color` becomes the accent (`--brand*` CSS variables, readable
-  text colour is computed) and is cached so the next visit paints in the right colour.
-- Cart: persisted per shop host, synced between tabs, minimum-order progress, "clear" with undo; side panel on
-  desktop, bottom sheet + floating bar on phones.
+  (Uzbek/Russian names, apostrophe-tolerant; in the header from 1024px, above the menu below that), categories
+  with scroll-spy — a list on the left from 1360px, sticky chips below that — popular dishes (a grid of cards on
+  wide screens, a swipeable row on phones), menu lines (name, description, price, photo) whose round "+" turns
+  into a stepper in place, product details sheet. `brand_color` becomes the accent (`--brand*` CSS variables,
+  readable text colour is computed; a navy or near-black brand turns into light buttons on the dark theme) and is
+  cached so the next visit paints in the right colour.
+- Cart: persisted per shop host, synced between tabs, minimum-order progress, "clear" with undo; always-open side
+  panel on desktop (lines with unit price, delivery time, total), bottom sheet + floating bar on phones.
 - Checkout: delivery/pickup, address + "use my location" (Telegram `LocationManager` inside Telegram, browser
   geolocation elsewhere), name, phone (`+998` mask, "share my Telegram number" in the Mini App), cash/card, comment.
   Client-side validation, server `validation` errors mapped to fields, `min_order`, `product_not_found` (removed

@@ -31,8 +31,8 @@ export async function openBusiness(page: Page, business: Business) {
 /** The shop: put the product in the cart, sign in with a phone (test-mode code) and place a pickup order. */
 export async function placeOrder(page: Page, business: Business, product: string) {
   await page.goto(urls.shop(business.slug))
-  await expect(page.getByRole('heading', { name: product }).or(page.getByText(product).first())).toBeVisible()
   const card = page.getByRole('article', { name: product }).first()
+  await expect(card).toBeVisible()
   await card.getByRole('button', { name: /Qo.shish/ }).click()
   // Desktop shows the cart beside the menu; phones open it as a sheet.
   const checkout = page.getByRole('button', { name: 'Rasmiylashtirish', exact: true })

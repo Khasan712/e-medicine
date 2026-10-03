@@ -1,5 +1,5 @@
 import { waitFor } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { business } from '../../test/fixtures'
 import { requestsTo } from '../../test/handlers'
 import { findCard, pattern, renderApp, screen, som, uz, within } from '../../test/render'
@@ -16,22 +16,81 @@ describe('catalog', () => {
     expect(screen.getAllByText('30–45 daqiqa').length).toBeGreaterThan(0)
     expect(screen.getByText(`Minimal buyurtma ${som(50000)}`)).toBeInTheDocument()
 
+    // Phones: the search above the menu, categories as chips (the popular dishes first).
+    expect(within(screen.getByRole('banner')).queryByRole('searchbox')).not.toBeInTheDocument()
+    expect(screen.getByRole('searchbox', { name: uz.searchPlaceholder })).toBeInTheDocument()
     const chips = within(screen.getByRole('navigation', { name: uz.categories }))
-    expect(chips.getAllByRole('button').map((chip) => chip.textContent)).toEqual(['Burgerlar', 'Ichimliklar', uz.other])
+    expect(chips.getAllByRole('button').map((chip) => chip.textContent)).toEqual([uz.popularShort, 'Burgerlar', 'Ichimliklar', uz.other])
 
     expect(screen.getByRole('heading', { name: uz.popular })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /^Burgerlar/ })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /^Ichimliklar/ })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /^Desertlar/ })).not.toBeInTheDocument() // empty category
 
+    // A menu line: name, description, price and the round "+".
     const burger = await findCard('Klassik burger')
+    expect(within(burger).getByRole('heading', { name: 'Klassik burger' })).toBeInTheDocument()
+    expect(within(burger).getByText('Mol go‘shti, cheddar pishlog‘i va maxsus sous')).toBeInTheDocument()
     expect(within(burger).getByText(som(35000))).toBeInTheDocument()
-    expect(within(burger).getByText('1 dona')).toBeInTheDocument()
-    expect(within(burger).getByText(uz.top)).toBeInTheDocument()
-    expect(within(await findCard('Fri kartoshka')).queryByText(uz.top)).not.toBeInTheDocument()
+    expect(within(burger).getByRole('button', { name: uz.add })).toBeInTheDocument()
+    // The popular dishes come first, as their own cards.
+    expect(screen.getAllByRole('article', { name: 'Klassik burger' })).toHaveLength(2)
 
     expect(document.title).toBe(business.name)
     expect(requestsTo('GET', 'shop')).toHaveLength(1)
+  })
+
+  describe('on a wide screen', () => {
+    const matchMedia = window.matchMedia
+    beforeEach(() => {
+      // Every min-width query matches: the widest layout.
+      window.matchMedia = (query: string) =>
+        ({ ...matchMedia(query), matches: query.includes('min-width') || query.includes('prefers-reduced-motion') }) as MediaQueryList
+    })
+    afterEach(() => {
+      window.matchMedia = matchMedia
+    })
+
+    it('shows the categories on the left, the search in the header and the cart beside the menu', async () => {
+      const { user } = renderApp({ cart: [{ id: 3, qty: 2 }] })
+      const rail = await screen.findByRole('navigation', { name: uz.categories })
+      expect(within(rail).getAllByRole('button').map((item) => item.textContent)).toEqual([
+        uz.popularShort,
+        'Burgerlar',
+        'Ichimliklar',
+        uz.other,
+      ])
+      expect(within(rail).getByRole('button', { name: uz.popularShort })).toHaveAttribute('aria-current', 'true')
+
+      const search = within(screen.getByRole('banner')).getByRole('searchbox', { name: uz.searchPlaceholder })
+      expect(screen.getAllByRole('searchbox')).toHaveLength(1)
+
+      const cart = screen.getByRole('region', { name: uz.cart })
+      expect(within(cart).getByText('2 ta mahsulot')).toBeInTheDocument()
+      expect(within(cart).getByText(`${som(9000)} / dona`)).toBeInTheDocument()
+      expect(within(cart).getByText(uz.delivery)).toBeInTheDocument()
+      expect(within(cart).getByTestId('cart-total')).toHaveTextContent(pattern(som(18000)))
+
+      // The search from the header filters the menu; the rail stays.
+      await user.type(search, 'kola')
+      expect(await screen.findByRole('heading', { name: new RegExp(uz.results) })).toHaveTextContent('1')
+      expect(screen.getByRole('navigation', { name: uz.categories })).toBeInTheDocument()
+    })
+
+    it('scrolls to a category so that its title stays clear of the header', async () => {
+      const { user } = renderApp()
+      const rail = await screen.findByRole('navigation', { name: uz.categories })
+      const header = screen.getByRole('banner')
+      const section = screen.getByRole('heading', { name: /^Ichimliklar/ }).closest('section')!
+      header.getBoundingClientRect = () => ({ height: 64 }) as DOMRect
+      section.getBoundingClientRect = () => ({ top: 900 }) as DOMRect
+      const scrollTo = vi.spyOn(window, 'scrollTo')
+
+      await user.click(within(rail).getByRole('button', { name: 'Ichimliklar' }))
+      expect(scrollTo).toHaveBeenCalledWith({ top: 900 - 64 - 16, behavior: 'auto' })
+      expect(within(rail).getByRole('button', { name: 'Ichimliklar' })).toHaveAttribute('aria-current', 'true')
+      scrollTo.mockRestore()
+    })
   })
 
   it('applies the brand colour of the business to the CSS variables', async () => {

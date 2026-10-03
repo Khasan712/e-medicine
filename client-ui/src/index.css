@@ -33,7 +33,12 @@
   --brand-2: #ff2e63;
   --brand-ink: #ffffff;
   --brand-text: var(--brand-text-light, var(--brand));
-  --brand-soft: color-mix(in srgb, var(--brand) 12%, transparent);
+  /* The brand as a fill (buttons, steppers, badges) and the text on it; the dark theme may lighten it. */
+  --brand-fill: var(--brand);
+  --brand-fill-ink: var(--brand-ink);
+  --brand-soft: color-mix(in srgb, var(--brand-text) 12%, transparent);
+  --hero-bg: var(--brand-hero-light, var(--brand));
+  --hero-ink: var(--brand-hero-ink-light, var(--brand-ink));
 
   --sh-sm: 0 1px 2px rgb(22 22 26 / 0.05);
   --sh-card: 0 1px 2px rgb(22 22 26 / 0.04), 0 8px 24px rgb(22 22 26 / 0.07);
@@ -67,7 +72,11 @@
   --red-soft: rgb(255 99 105 / 0.15);
 
   --brand-text: var(--brand-text-dark, var(--brand));
-  --brand-soft: color-mix(in srgb, var(--brand) 18%, transparent);
+  --brand-fill: var(--brand-fill-dark, var(--brand));
+  --brand-fill-ink: var(--brand-ink-dark, var(--brand-ink));
+  --brand-soft: color-mix(in srgb, var(--brand-text) 16%, transparent);
+  --hero-bg: var(--brand-hero-dark, var(--surface-2));
+  --hero-ink: var(--brand-hero-ink-dark, var(--ink));
 
   --sh-sm: 0 1px 2px rgb(0 0 0 / 0.3);
   --sh-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 28px rgb(0 0 0 / 0.32);
@@ -125,9 +134,9 @@
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-muted: var(--muted);
-  --color-brand: var(--brand);
+  --color-brand: var(--brand-fill);
   --color-brand-2: var(--brand-2);
-  --color-brand-ink: var(--brand-ink);
+  --color-brand-ink: var(--brand-fill-ink);
   --color-brand-text: var(--brand-text);
   --color-brand-soft: var(--brand-soft);
   --color-green: var(--green);
@@ -230,11 +239,11 @@
     cursor: pointer;
   }
   :focus-visible {
-    outline: 2.5px solid var(--brand);
+    outline: 2.5px solid var(--brand-text);
     outline-offset: 2px;
   }
   ::selection {
-    background: color-mix(in srgb, var(--brand) 24%, transparent);
+    background: color-mix(in srgb, var(--brand-text) 24%, transparent);
   }
   input[type='search']::-webkit-search-cancel-button,
   input[type='search']::-webkit-search-decoration {
@@ -271,13 +280,6 @@
     animation: shimmer 1.3s ease infinite;
   }
 
-  /* brand hero gradient */
-  .hero-gradient {
-    background:
-      radial-gradient(120% 140% at 100% 0%, color-mix(in srgb, #ffd29a 75%, transparent) 0%, transparent 52%),
-      radial-gradient(60% 80% at 0% 100%, rgb(255 255 255 / 0.16), transparent 60%),
-      linear-gradient(135deg, var(--brand) 0%, var(--brand-2) 100%);
-  }
   .brand-gradient {
     background: linear-gradient(135deg, var(--brand), var(--brand-2));
   }

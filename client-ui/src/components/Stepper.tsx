@@ -8,7 +8,7 @@ interface StepperProps {
   name: string
   onIncrement: () => void
   onDecrement: () => void
-  variant?: 'brand' | 'soft' | 'large'
+  variant?: 'pill' | 'soft' | 'large'
   min?: number
   max?: number
   /** Show a bin instead of "−" when the next step removes the item. */
@@ -16,33 +16,46 @@ interface StepperProps {
   className?: string
 }
 
+const HOVER = 'hover:bg-[color-mix(in_srgb,currentColor_14%,transparent)]'
+
 const STYLES = {
-  brand: {
-    root: 'h-10 rounded-xl bg-brand px-1 text-brand-ink shadow-brand',
-    button: 'size-8 rounded-[10px] hover:bg-white/18',
-    value: 'text-[15px]',
-    icon: 'size-4',
+  /** On a product card: takes the place of the round "+" button, its own "+" exactly where that one was. */
+  pill: {
+    root: 'h-11 rounded-full bg-brand text-brand-ink shadow-brand',
+    minus: cn('h-11 w-[38px] rounded-full', HOVER),
+    plus: cn('size-11 rounded-full', HOVER),
+    value: 'min-w-[22px] text-[15px]',
+    minusIcon: 'size-[18px]',
+    plusIcon: 'size-5',
   },
+  /** A cart line. */
   soft: {
-    root: 'h-9 rounded-[11px] bg-surface-2',
-    button: 'h-9 w-8 rounded-[11px] text-ink-2 hover:text-ink',
-    value: 'min-w-[22px] text-[14.5px]',
-    icon: 'size-4',
+    root: 'h-11 rounded-full bg-surface-2',
+    minus: 'h-11 w-10 rounded-full text-ink-2 hover:text-ink',
+    plus: 'h-11 w-10 rounded-full text-ink-2 hover:text-ink',
+    value: 'min-w-[18px] text-[14.5px]',
+    minusIcon: 'size-4',
+    plusIcon: 'size-4',
   },
+  /** The product sheet. */
   large: {
     root: 'h-[52px] rounded-2xl bg-surface-2 px-1',
-    button: 'h-11 w-[42px] rounded-xl hover:bg-surface-3',
+    minus: 'h-11 w-[42px] rounded-xl hover:bg-surface-3',
+    plus: 'h-11 w-[42px] rounded-xl hover:bg-surface-3',
     value: 'min-w-7 text-[17px]',
-    icon: 'size-5',
+    minusIcon: 'size-5',
+    plusIcon: 'size-5',
   },
 } as const
+
+const BUTTON = 'grid place-items-center transition-[background-color,transform] active:scale-90 disabled:opacity-40'
 
 export function Stepper({
   value,
   name,
   onIncrement,
   onDecrement,
-  variant = 'brand',
+  variant = 'pill',
   min = 0,
   max = 99,
   trashAtMin = false,
@@ -59,12 +72,12 @@ export function Stepper({
     >
       <button
         type="button"
-        className={cn('grid place-items-center transition-[background-color,transform] active:scale-90 disabled:opacity-40', style.button)}
+        className={cn(BUTTON, style.minus)}
         onClick={onDecrement}
         disabled={value <= min}
         aria-label={removes ? t('removeFromCart') : t('decrease')}
       >
-        <Icon name={removes ? 'trash' : 'minus'} className={style.icon} />
+        <Icon name={removes ? 'trash' : 'minus'} className={style.minusIcon} />
       </button>
       <output aria-live="polite" className={cn('tabular text-center', style.value)}>
         <span key={value} className="inline-block animate-[rise-in_0.22s_ease_both]">
@@ -73,12 +86,12 @@ export function Stepper({
       </output>
       <button
         type="button"
-        className={cn('grid place-items-center transition-[background-color,transform] active:scale-90 disabled:opacity-40', style.button)}
+        className={cn(BUTTON, style.plus)}
         onClick={onIncrement}
         disabled={value >= max}
         aria-label={t('increase')}
       >
-        <Icon name="plus" className={style.icon} />
+        <Icon name="plus" className={style.plusIcon} />
       </button>
     </div>
   )

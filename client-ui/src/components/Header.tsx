@@ -3,19 +3,24 @@ import { Link, NavLink, useLocation } from 'react-router'
 import { useI18n } from '../i18n/i18n'
 import { cn } from '../lib/cn'
 import { isTelegram } from '../lib/telegram'
+import { HEADER_SEARCH_QUERY, pageWidth, useMediaQuery } from '../lib/useMediaQuery'
 import { avatarLetter, useAuth } from '../state/auth'
 import { useCart } from '../state/cart'
 import { useCatalog } from '../state/catalog'
 import { useChangeLanguage } from '../state/hooks'
 import { useNav } from '../state/nav'
+import { useSearch } from '../state/search'
 import { useTheme } from '../state/theme'
 import { BusinessLogo } from './BusinessLogo'
 import { IconButton } from './Button'
 import { Icon } from './Icon'
+import { SearchBox } from './SearchBox'
 
 export function Header() {
   const { t, lang } = useI18n()
-  const { business } = useCatalog()
+  const { business, status } = useCatalog()
+  const search = useSearch()
+  const searchHere = useMediaQuery(HEADER_SEARCH_QUERY)
   const { client, token } = useAuth()
   const { count, pulse } = useCart()
   const { openSheet, back } = useNav()
@@ -33,6 +38,8 @@ export function Header() {
   }, [])
 
   const atRoot = pathname === '/'
+  // On wide screens the menu search lives here; phones have it above the menu.
+  const showSearch = atRoot && searchHere && status !== 'error'
 
   return (
     <header
@@ -41,7 +48,7 @@ export function Header() {
         scrolled ? 'border-line' : 'border-transparent',
       )}
     >
-      <div className="mx-auto flex h-[var(--header-h)] w-full max-w-[1240px] items-center gap-2 px-4 md:gap-3 md:px-6">
+      <div className={cn('mx-auto flex h-[var(--header-h)] w-full items-center gap-2 px-4 md:gap-3 md:px-6', pageWidth(pathname))}>
         {!atRoot && !inTelegram && (
           <IconButton icon="chevron-left" label={t('back')} onClick={back} className="-ml-2 md:hidden" />
         )}
@@ -89,7 +96,9 @@ export function Header() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center gap-1">
+        {showSearch && <SearchBox value={search.query} onChange={search.setQuery} className="ml-auto w-full max-w-[440px]" />}
+
+        <div className={cn('flex shrink-0 items-center gap-1', showSearch ? 'ml-2' : 'ml-auto')}>
           {!inTelegram && (
             <div role="group" aria-label={t('language')} className="mr-1 hidden rounded-[11px] bg-surface-2 p-[3px] md:flex">
               {(['uz', 'ru'] as const).map((code) => (
@@ -141,7 +150,7 @@ export function Header() {
             className="grid size-[42px] place-items-center rounded-[13px] transition-colors hover:bg-surface-2"
           >
             {token && client ? (
-              <span className="grid size-[34px] place-items-center rounded-full bg-[linear-gradient(135deg,#7c5cff,#ff5a9e)] text-[13px] font-extrabold text-white">
+              <span className="grid size-[34px] place-items-center rounded-full bg-surface-3 text-[13px] font-extrabold text-ink">
                 {avatarLetter(client) ?? <Icon name="user" className="size-[18px]" />}
               </span>
             ) : (

@@ -47,6 +47,20 @@ describe('brand colour', () => {
 
     expect(brandVariables('not a colour')['--brand']).toBe('#ff5a1f')
   })
+
+  it('keeps a near-black brand visible on the dark theme', () => {
+    const darkSurface = parseHex('#17181b')!
+    const slate = brandVariables('#0f172a')
+    // Buttons turn light, with dark text; the banner keeps the brand itself, with white text.
+    expect(contrast(parseHex(slate['--brand-fill-dark'])!, darkSurface)).toBeGreaterThanOrEqual(4.5)
+    expect(slate['--brand-ink-dark']).toBe('#16161a')
+    expect(slate['--brand-hero-ink-dark']).toBe('#ffffff')
+    expect(slate['--brand-hero-light']).toBe('#0f172a')
+
+    const orange = brandVariables('#FF6B00') // bright enough: the same on both themes
+    expect(orange['--brand-fill-dark']).toBe('#ff6b00')
+    expect(orange['--brand-ink-dark']).toBe('#ffffff')
+  })
 })
 
 describe('api client', () => {
