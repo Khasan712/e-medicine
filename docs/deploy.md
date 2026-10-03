@@ -66,20 +66,20 @@ sizlarbilan.uz, *.sizlarbilan.uz {
 
 `reverse_proxy` `Host` ni saqlaydi va `X-Forwarded-Proto: https` qo'yadi — backend so'rov HTTPS ekanini biladi.
 
-**portex bilan bitta IP:** portex gateway hozir 443 da `*.portex.uz` ni o'zi yopadi. Ikkalasi bitta 443 da ishlashi uchun
-bittasini tanlang:
-* **SNI router** (Caddy layer4 yoki HAProxy) 443 da: `*.portex.uz` → portex gateway'ga TLS'ni ochmay (passthrough),
-  qolgani → yuqoridagi edge (ichki portda).
-* **Cloudflare proxy** (to'q sariq bulut) `*.sizlarbilan.uz` uchun + **Origin Rule**: bu hostlar → origin port 8443.
-  Edge 8443 da Cloudflare Origin CA sertifikati bilan (SSL rejimi Full (strict)); portex 443 da qoladi, DNS-01 ham
-  kerak emas.
+**Serverda qanday qilingan (2026-10-03):** edge — `infra` reposi (`~/Desktop/My/Projects/infra/edge`, serverda
+`~/infra/edge`): bitta Caddy hostning tarmog'ida 80/443 ni egallaydi va `portex.uz` ni ham, `sizlarbilan.uz` ni ham
+oladi. portex gateway uning orqasida (portex repo'dagi `compose.edge.yml`, `127.0.0.1:8080`) — SNI router ham,
+Cloudflare proxy ham kerak bo'lmadi. Cloudflare proxy (to'q sariq bulut) ishlatilmaydi: O'zbekistondan so'rov
+Varshava (WAW) orqali aylanadi. Har loyiha o'z kirishini faqat `127.0.0.1` dagi portda ochadi: DeliveryHub `8100`,
+3d-chess `8090`, portex `8080`.
 
 ## 3. Server
 
 ```bash
 # Docker Engine + compose plugin o'rnatilgan; firewall: 22, 80, 443 (8100 ochilmaydi)
-git clone https://github.com/Khasan712/deliveryhub.git /srv/deliveryhub
-cd /srv/deliveryhub
+# /var/www root'niki, deploy foydalanuvchisi u yerda papka ocholmaydi — shuning uchun uy papkasida
+git clone https://github.com/Khasan712/deliveryhub.git ~/deliveryhub
+cd ~/deliveryhub
 ```
 
 `.env` — Mac'dagi `.env` ning nusxasi (`scp`, git'ga hech qachon kirmaydi), farqlari:
@@ -106,7 +106,7 @@ Bitta botni bir vaqtda faqat bitta servis o'qiy oladi — Mac'dagi bot to'xtamas
 # Mac'da: yozuvlarni to'xtatib, zaxira
 docker compose stop bot backend
 make backup                                   # → backups/<stamp>/{db.dump,media.tar.gz}
-scp -r backups/<stamp> server:/srv/deliveryhub/backups/
+scp -r backups/<stamp> deploy@189.74.98.186:deliveryhub/backups/
 
 # serverda
 RESTORE_YES=yes scripts/restore.sh backups/<stamp>
@@ -126,8 +126,8 @@ Tekshirish: `https://deliveryhub.sizlarbilan.uz` (login), `https://food.sizlarbi
 |---|---|
 | Yangilash | `git pull && docker compose up -d --build` (migratsiyalar o'zi qo'llanadi) |
 | Holat / log | `docker compose ps`, `docker compose logs -f backend bot` |
-| Zaxira (cron, har kuni 03:00) | `0 3 * * * cd /srv/deliveryhub && BACKUP_DIR=/srv/backups/deliveryhub BACKUP_KEEP=14 scripts/backup.sh` |
-| Zaxiradan tiklash | `scripts/restore.sh /srv/backups/deliveryhub/<stamp>` |
+| Zaxira (cron, har kuni 03:30 — o'rnatilgan) | `30 3 * * * cd /home/deploy/deliveryhub && BACKUP_DIR=/home/deploy/backups/deliveryhub BACKUP_KEEP=14 scripts/backup.sh >> /home/deploy/backups/deliveryhub.log 2>&1` |
+| Zaxiradan tiklash | `scripts/restore.sh /home/deploy/backups/deliveryhub/<stamp>` |
 | Orqaga qaytish (kod) | `git checkout <oldingi commit> && docker compose up -d --build` |
 | Test bizneslarini o'chirish | `docker compose exec backend python manage.py delete_business --prefix e2e- --yes` |
 
