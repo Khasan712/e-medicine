@@ -12,7 +12,7 @@ from django_tenants.utils import get_public_schema_name, schema_context, tenant_
 
 from apps.core.models import Descriptions, User
 from apps.platform import provisioning
-from apps.platform.bots import hash_token
+from apps.platform.bots import RELEASE_CALLS, hash_token
 from apps.platform.crypto import decrypt, encrypt
 from apps.platform.models import BotSetup, Business, BusinessBot, Domain
 from apps.platform.telegram_api import TelegramError
@@ -277,9 +277,17 @@ class BotTests(PlatformTestCase):
         with mock.patch('apps.platform.bots.call') as telegram:
             self.assertEqual(self.hub.delete('/api/v1/businesses/test-shop/bots/client').status_code, 204)
         self.assertFalse(BusinessBot.objects.exists())
-        # The bot leaves with its Mini App button and commands reset: it stays its owner's, pointing at nothing.
-        self.assertEqual([c.args[1] for c in telegram.call_args_list],
-                         ['setChatMenuButton', 'deleteMyCommands', 'deleteMyCommands'])
+        # The bot leaves with its Mini App button, commands and descriptions reset: it stays its owner's, pointing
+        # at nothing.
+        self.assertEqual([c.args[1:3] for c in telegram.call_args_list], [
+            ('setChatMenuButton', {'menu_button': {'type': 'default'}}),
+            ('deleteMyCommands', {}),
+            ('deleteMyCommands', {'language_code': 'ru'}),
+            ('setMyDescription', {'description': ''}),
+            ('setMyDescription', {'description': '', 'language_code': 'ru'}),
+            ('setMyShortDescription', {'short_description': ''}),
+            ('setMyShortDescription', {'short_description': '', 'language_code': 'ru'}),
+        ])
         self.assertEqual(telegram.call_args_list[0].args[0], '3003:TOKEN-FROM-BOTFATHER')
         self.assertEqual(self.hub.delete('/api/v1/businesses/test-shop/bots/nope').status_code, 404)
 
@@ -345,6 +353,20 @@ class DeleteBusinessApiTests(PlatformTestCase):
         with mock.patch('apps.platform.bots.call', side_effect=offline) as telegram:
             self.assertEqual(self.delete().status_code, 204)
         self.assertEqual(telegram.call_count, 1)  # no point waiting for the other calls
+
+    def test_a_dead_token_ends_the_clean_up(self):
+        revoked = TelegramError('setChatMenuButton', 'Unauthorized', 401)
+        with mock.patch('apps.platform.bots.call', side_effect=revoked) as telegram:
+            self.assertEqual(self.delete().status_code, 204)
+        self.assertEqual(telegram.call_count, 1)
+
+    def test_a_refused_call_does_not_skip_the_rest(self):
+        refused = TelegramError('setMyDescription', 'Bad Request: description is too long', 400)
+        answers = [None] * len(RELEASE_CALLS)
+        answers[3] = refused
+        with mock.patch('apps.platform.bots.call', side_effect=answers) as telegram:
+            self.assertEqual(self.delete().status_code, 204)
+        self.assertEqual(telegram.call_count, len(RELEASE_CALLS))
 
     def test_only_our_staff_and_only_businesses(self):
         anonymous = self.make_client('hub.localhost')

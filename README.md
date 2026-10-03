@@ -74,8 +74,10 @@ make schema         # docs/openapi/*.yaml ni koddan yangilash
 
 **Biznesni o'chirish:** biznes sahifasining pastidagi "Biznesni o'chirish" — faqat to'xtatilgan biznes, manzilini
 (slug) qo'lda yozib tasdiqlangach. Sxemasi (buyurtmalar, mijozlar, mahsulotlar, xodimlar), domenlari, rasmlari
-o'chadi; botlar platformadan uziladi (Mini App tugmasi va buyruqlari tozalanadi, botlar Telegram'da egasida qoladi).
-Qaytarib bo'lmaydi — kerak bo'lsa avval `make backup`.
+o'chadi; botlar platformadan uziladi: Mini App tugmasi, buyruqlari va tavsiflari tozalanadi, botlarning o'zi
+Telegram'da egasida qoladi. Platforma boti orqali yaratilgan botlar Telegram tomonida uning boshqaruvida qoladi (Bot API
+menejerga undan voz kechish imkonini bermaydi), lekin bot servisi ularni boshqa ishlatmaydi; egasi istasa, botni
+@BotFather'da o'chiradi. Qaytarib bo'lmaydi — kerak bo'lsa avval `make backup`.
 
 Platforma boti uchun: @BotFather'da bot yarating, unda **Bot Management** rejimini yoqing va tokenini `.env` dagi
 `PLATFORM_BOT_TOKEN` ga yozing.

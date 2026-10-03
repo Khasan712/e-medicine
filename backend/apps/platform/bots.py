@@ -52,18 +52,29 @@ def connect_bot(business, role, token, created_via=BusinessBot.VIA_TOKEN, owner_
     return bot
 
 
-# What the bot service set up (commands in the default language and in Russian, the Mini App button), undone when
-# a bot leaves the platform: the bot stays its owner's, it just stops pointing at us.
+# What the bot service set up (the Mini App button; commands and descriptions in the default language and in
+# Russian), undone when a bot leaves the platform: the bot stays its owner's, it just stops speaking for us.
 RELEASE_CALLS = (
     ('setChatMenuButton', {'menu_button': {'type': 'default'}}),
     ('deleteMyCommands', {}),
     ('deleteMyCommands', {'language_code': 'ru'}),
+    ('setMyDescription', {'description': ''}),  # an empty text removes it
+    ('setMyDescription', {'description': '', 'language_code': 'ru'}),
+    ('setMyShortDescription', {'short_description': ''}),
+    ('setMyShortDescription', {'short_description': '', 'language_code': 'ru'}),
 )
+# The other calls would fail the same way: Telegram out of reach (no code), the token revoked or the bot deleted.
+GIVE_UP = (None, 401, 404)
 
 
 def release_bot(bot):
-    """Best effort: a bot leaving the platform (disconnected, or its business deleted) stops opening our Mini App.
-    A token that cannot be read or Telegram out of reach only skip the clean-up."""
+    """Best effort: a bot leaving the platform (disconnected, or its business deleted) stops pointing at us.
+    A token that cannot be read, Telegram out of reach or a dead token only skip the clean-up.
+
+    A bot created through our platform bot (Telegram Managed Bots) stays managed by it on Telegram's side: the Bot API
+    gives a manager no way to let a bot go. Nothing of ours polls or configures it any more, and its owner can
+    delete it in @BotFather. Its token is not replaced either: the manager could fetch the new one anyway, and the
+    managed_bot update that follows would reach our platform bot as an unknown bot."""
     try:
         token = bot.token
     except InvalidToken:
@@ -73,7 +84,7 @@ def release_bot(bot):
             call(token, method, payload, timeout=5)
         except TelegramError as exc:
             logger.warning('@%s: %s failed while releasing the bot: %s', bot.username, method, exc.description)
-            if exc.code is None:  # Telegram out of reach: the other calls would wait too
+            if exc.code in GIVE_UP:
                 return
 
 
