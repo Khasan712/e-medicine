@@ -1,11 +1,15 @@
-"""Opening a business on the platform: its schema, domains and owner account."""
+"""Opening a business on the platform (its schema, domains and owner account) and deleting it for good."""
 import logging
 import re
+import shutil
+from pathlib import Path
 
 from django.conf import settings
+from django.db import connection, transaction
 from django_tenants.utils import get_public_schema_name, tenant_context
 
 from .models import Business, Domain
+from .storage import platform_storage
 
 logger = logging.getLogger('platform')
 
@@ -83,6 +87,26 @@ def create_business(*, name, slug, owner_name, owner_phone, owner_password, **pr
     write_tunnels_file()
     logger.info('Business %s (%s) created', business.name, business.slug)
     return business
+
+
+def delete_business(business):
+    """Deletes a business for good: its schema (staff, catalog, customers, orders), its domains, bots and setup
+    links, and its uploaded files. Its bots are released first, while their tokens can still be read."""
+    from .bots import release_bot
+
+    for bot in business.bots.all():
+        release_bot(bot)
+    schema, logo = business.schema_name, business.logo.name
+    with transaction.atomic(), connection.cursor() as cursor:
+        # Checks deferred to the end of the transaction run now: a table with pending checks (a business opened in
+        # the same transaction) cannot be dropped.
+        cursor.execute('SET CONSTRAINTS ALL IMMEDIATE')
+        business.delete(force_drop=True)  # drops the schema; domains, bots and setup links go with the row
+    shutil.rmtree(Path(settings.MEDIA_ROOT) / schema, ignore_errors=True)
+    if logo:
+        platform_storage.delete(logo)
+    write_tunnels_file()
+    logger.info('Business %s (%s) deleted', business.name, business.slug)
 
 
 def tunnel_subdomains():

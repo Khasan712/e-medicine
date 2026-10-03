@@ -6,12 +6,13 @@ import logging
 import secrets
 from datetime import timedelta
 
+from cryptography.fernet import InvalidToken
 from django.conf import settings
 from django.core.cache import cache
 from django.utils import timezone
 
 from .models import BotSetup, BusinessBot
-from .telegram_api import TelegramError, get_me
+from .telegram_api import TelegramError, call, get_me
 
 logger = logging.getLogger('platform')
 
@@ -49,6 +50,31 @@ def connect_bot(business, role, token, created_via=BusinessBot.VIA_TOKEN, owner_
     bot.save()
     logger.info('@%s connected to %s as the %s bot', bot.username, business, role)
     return bot
+
+
+# What the bot service set up (commands in the default language and in Russian, the Mini App button), undone when
+# a bot leaves the platform: the bot stays its owner's, it just stops pointing at us.
+RELEASE_CALLS = (
+    ('setChatMenuButton', {'menu_button': {'type': 'default'}}),
+    ('deleteMyCommands', {}),
+    ('deleteMyCommands', {'language_code': 'ru'}),
+)
+
+
+def release_bot(bot):
+    """Best effort: a bot leaving the platform (disconnected, or its business deleted) stops opening our Mini App.
+    A token that cannot be read or Telegram out of reach only skip the clean-up."""
+    try:
+        token = bot.token
+    except InvalidToken:
+        return
+    for method, payload in RELEASE_CALLS:
+        try:
+            call(token, method, payload, timeout=5)
+        except TelegramError as exc:
+            logger.warning('@%s: %s failed while releasing the bot: %s', bot.username, method, exc.description)
+            if exc.code is None:  # Telegram out of reach: the other calls would wait too
+                return
 
 
 def missing_roles(business):

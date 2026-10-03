@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.platform import provisioning
-from apps.platform.bots import BotInUse, connect_bot, create_setup_link
+from apps.platform.bots import BotInUse, connect_bot, create_setup_link, release_bot
 from apps.platform.models import Business, BusinessBot
 from apps.platform.overview import businesses, owner_of
 from apps.platform.telegram_api import TelegramError
@@ -126,6 +126,20 @@ class BusinessDetailView(PlatformView):
         data.apply(business)
         return Response(self.detail(self.business(slug)))
 
+    @extend_schema(
+        summary='Delete the business for good (only a suspended one; its slug typed as confirmation)',
+        request=s.DeleteBusinessSerializer, responses={204: None},
+        description='Drops its schema (staff, catalog, customers, orders), domains, bots and uploaded files. '
+                    'Errors: 409 business_active, 400 confirmation_required.')
+    def delete(self, request, slug):
+        business = self.business(slug)
+        if business.is_active:
+            raise ApiError('business_active', 409)
+        if str(request.data.get('confirm', '')).strip() != business.slug:
+            raise ApiError('confirmation_required')
+        provisioning.delete_business(business)
+        return Response(status=204)
+
 
 class BusinessStatusView(PlatformView):
     @extend_schema(summary='Suspend or activate (a suspended business answers 503 everywhere)',
@@ -189,5 +203,7 @@ class BotDisconnectView(PlatformView):
     def delete(self, request, slug, role):
         if role not in (BusinessBot.ROLE_CLIENT, BusinessBot.ROLE_ADMIN):
             raise ApiError('not_found', 404)
-        BusinessBot.objects.filter(business=self.business(slug), role=role).delete()
+        for bot in BusinessBot.objects.filter(business=self.business(slug), role=role):
+            release_bot(bot)
+            bot.delete()
         return Response(status=204)

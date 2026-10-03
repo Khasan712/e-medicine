@@ -40,10 +40,16 @@ test-ui:
 	cd admin-ui && npm test && npm run lint && npm run build
 	cd deliveryhub-ui && npm test && npm run lint && npm run build
 
-# End-to-end tests against the running stack (make up); the businesses they open are deleted afterwards.
+# End-to-end tests in a throwaway stack of their own (port 8200, own database, no bot tokens): built, tested,
+# then removed with its data. Never touches the stack of this machine or production.
+E2E_STACK = docker compose -p deliveryhub-e2e -f docker-compose.yml --env-file e2e/.stack.env
+E2E_SERVICES = db redis backend client-ui admin-ui deliveryhub-ui web
+
 e2e:
+	e2e/make-stack-env.sh > e2e/.stack.env
+	$(E2E_STACK) up -d --build --wait $(E2E_SERVICES)
 	cd e2e && npm ci --no-audit --no-fund --silent && npx playwright test; status=$$?; \
-		docker exec deliveryhub_backend python manage.py delete_business --prefix e2e- --yes; exit $$status
+		cd .. && $(E2E_STACK) down -v --remove-orphans; rm -f e2e/.stack.env; exit $$status
 
 # OpenAPI files of the three APIs (docs/openapi/*.yaml) from the backend code.
 schema:

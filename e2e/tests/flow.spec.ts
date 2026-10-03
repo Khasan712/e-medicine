@@ -4,7 +4,8 @@ import { completeOrder, fillCatalog, openBusiness, placeOrder, signInToAdmin } f
 
 /**
  * The life of a business, through every part: our panel opens it → its owner signs in to the admin panel and
- * fills the catalog → a customer orders in the shop → the owner completes the order → the customer sees it.
+ * fills the catalog → a customer orders in the shop → the owner completes the order → the customer sees it →
+ * our panel suspends and activates it → and finally deletes it for good.
  */
 test.describe.serial('a new business from opening to the first order', () => {
   const business = newBusiness()
@@ -61,6 +62,30 @@ test.describe.serial('a new business from opening to the first order', () => {
     await expect(page.getByText('Biznes yoqildi')).toBeVisible()
     await customer.goto(urls.shop(business.slug))
     await expect(customer.getByRole('article', { name: product })).toBeVisible()
+  })
+
+  test('our panel deletes the business for good: its addresses stop answering', async ({ page }) => {
+    await openBusinessPage(page)
+    const deleteButton = page.getByRole('region', { name: "Biznesni o'chirish" }).getByRole('button')
+    await expect(deleteButton).toBeDisabled() // an active business is suspended first
+
+    await page.getByRole('button', { name: "To'xtatish" }).click()
+    await page.getByRole('alertdialog').getByRole('button', { name: "To'xtatish" }).click()
+    await expect(page.getByText("Biznes to'xtatildi")).toBeVisible()
+
+    await deleteButton.click()
+    const dialog = page.getByRole('alertdialog')
+    await dialog.getByLabel(/Tasdiqlash uchun manzilni yozing/).fill(business.slug)
+    await dialog.getByRole('button', { name: "Butunlay o'chirish" }).click()
+    await expect(page.getByText("Biznes o'chirildi")).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Bizneslar' })).toBeVisible()
+    await expect(page.locator(`a[href="/b/${business.slug}"]`)).toHaveCount(0)
+
+    for (const host of [urls.shop(business.slug), urls.admin(business.slug)]) {
+      const response = await page.request.get(`${host}/api/v1/shop`)
+      expect(response.status()).toBe(404)
+      expect(await response.json()).toEqual({ error: 'unknown_host' })
+    }
   })
 
   /** Our panel, signed in, on the business page. */

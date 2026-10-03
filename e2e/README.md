@@ -1,17 +1,19 @@
 # DeliveryHub end-to-end tests
 
-Playwright tests of the whole platform running in Docker: our panel opens a business, its owner fills the
-catalog, a customer orders in the shop, the owner completes the order and the customer sees it.
+Playwright tests of the whole platform: our panel opens a business, its owner fills the catalog, a customer orders
+in the shop, the owner completes the order and the customer sees it; our panel suspends, activates and finally
+deletes the business.
 
 ```bash
-docker compose up -d --build   # from the repository root; the stack needs SHOP_OTP_DEBUG=True (the shop shows
-                               # the sign-in code) — a LOCAL development stack only, never production
-make e2e                       # npm ci, playwright test, then deletes the e2e-* businesses
+make e2e    # from the repository root
 ```
 
-* A platform staff account of that stack is needed: `E2E_PLATFORM_PHONE` / `E2E_PLATFORM_PASSWORD`, or a local
-  `../.dev-accounts.txt` (gitignored) with a line `platform …: phone=… password=…`.
-* `E2E_PORT` — the port of the `web` container (default 8100). Hosts: `hub.localhost`, `<slug>.localhost`,
-  `<slug>-admin.localhost`.
-* Every run opens a business `e2e-<stamp>`; `manage.py delete_business --prefix e2e- --yes` removes them.
+`make e2e` starts a **throwaway stack of its own** (`docker compose -p deliveryhub-e2e`, port 8200, its own
+database, random secrets in `e2e/.stack.env`, `SHOP_OTP_DEBUG=True` so the shop shows the sign-in code, no Telegram
+tokens and no bot service), runs the tests, then removes the stack with its data. It never touches the stack of
+this machine or production.
+
+* `E2E_PORT` / `E2E_DB_PORT` — other ports for the throwaway stack (default 8200 / 5441).
+* Against another running stack: `E2E_PORT=… E2E_PLATFORM_PHONE=… E2E_PLATFORM_PASSWORD=… npx playwright test`
+  (a local development stack only — the tests open and delete businesses).
 * Failures keep a screenshot and a trace in `results/` (`npx playwright show-trace results/…/trace.zip`).

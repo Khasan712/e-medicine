@@ -157,6 +157,10 @@ class StatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=[Business.STATUS_ACTIVE, Business.STATUS_SUSPENDED])
 
 
+class DeleteBusinessSerializer(serializers.Serializer):
+    confirm = serializers.CharField(max_length=40, help_text="The business's slug, typed by hand")
+
+
 class BotConnectSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=[BusinessBot.ROLE_CLIENT, BusinessBot.ROLE_ADMIN])
     token = serializers.CharField(max_length=100)

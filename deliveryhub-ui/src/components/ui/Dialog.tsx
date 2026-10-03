@@ -101,6 +101,10 @@ interface ConfirmDialogProps {
   icon?: ReactNode
   /** Runs on confirm; the dialog stays open with a spinner until it settles and shows its error. */
   onConfirm: () => unknown
+  /** The confirm button waits for this (e.g. a name typed as confirmation). */
+  confirmDisabled?: boolean
+  /** Extra content under the description, e.g. a confirmation field. */
+  children?: ReactNode
 }
 
 export function ConfirmDialog({
@@ -113,6 +117,8 @@ export function ConfirmDialog({
   tone = 'primary',
   icon,
   onConfirm,
+  confirmDisabled = false,
+  children,
 }: ConfirmDialogProps) {
   const titleId = useId()
   const descriptionId = useId()
@@ -166,6 +172,7 @@ export function ConfirmDialog({
           )}
         </div>
       </div>
+      {children && <div className="mt-5">{children}</div>}
       {error && (
         <div role="alert" className="mt-4 rounded-xl bg-red-50 px-3 py-2 ring-1 ring-red-100">
           <FieldError>{error}</FieldError>
@@ -175,7 +182,7 @@ export function ConfirmDialog({
         <Button ref={cancelRef} variant="secondary" onClick={close} disabled={pending}>
           {cancelLabel}
         </Button>
-        <Button ref={confirmRef} variant={style.button} onClick={confirm} loading={pending}>
+        <Button ref={confirmRef} variant={style.button} onClick={confirm} loading={pending} disabled={confirmDisabled}>
           {confirmLabel}
         </Button>
       </div>

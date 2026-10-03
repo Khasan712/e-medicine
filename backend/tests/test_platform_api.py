@@ -4,6 +4,7 @@ import tempfile
 from pathlib import Path
 from unittest import mock
 
+from django.conf import settings
 from django.core.cache import cache
 from django.core.management import call_command
 from django.test import SimpleTestCase, override_settings
@@ -273,6 +274,80 @@ class BotTests(PlatformTestCase):
                                      format='json')
         self.assertEqual(response.json(), {'error': 'invalid_token'})
 
-        self.assertEqual(self.hub.delete('/api/v1/businesses/test-shop/bots/client').status_code, 204)
+        with mock.patch('apps.platform.bots.call') as telegram:
+            self.assertEqual(self.hub.delete('/api/v1/businesses/test-shop/bots/client').status_code, 204)
         self.assertFalse(BusinessBot.objects.exists())
+        # The bot leaves with its Mini App button and commands reset: it stays its owner's, pointing at nothing.
+        self.assertEqual([c.args[1] for c in telegram.call_args_list],
+                         ['setChatMenuButton', 'deleteMyCommands', 'deleteMyCommands'])
+        self.assertEqual(telegram.call_args_list[0].args[0], '3003:TOKEN-FROM-BOTFATHER')
         self.assertEqual(self.hub.delete('/api/v1/businesses/test-shop/bots/nope').status_code, 404)
+
+
+class DeleteBusinessApiTests(PlatformTestCase):
+    """Our panel deletes a suspended business for good, its slug typed as confirmation."""
+
+    def setUp(self):
+        super().setUp()
+        self.sign_in()
+        with schema_context(PUBLIC):
+            self.business = provisioning.create_business(
+                name='Yopilgan', slug='closing-soon', owner_name='A', owner_phone='+998901112233',
+                owner_password='secret-pass-1', status=Business.STATUS_SUSPENDED)
+            bot = BusinessBot(business=self.business, role='client', telegram_id=4004, username='closing_bot')
+            bot.token = '4004:CLOSING-BOT-TOKEN'
+            bot.save()
+        self.media = Path(settings.MEDIA_ROOT) / 'closing_soon' / 'products'
+        self.media.mkdir(parents=True, exist_ok=True)
+        (self.media / 'burger.jpg').write_bytes(b'jpeg')
+
+    def delete(self, slug='closing-soon', confirm='closing-soon'):
+        return self.hub.delete(f'/api/v1/businesses/{slug}', {'confirm': confirm}, format='json')
+
+    def schema_exists(self, name):
+        from django.db import connection
+
+        with connection.cursor() as cursor:
+            cursor.execute('select 1 from information_schema.schemata where schema_name = %s', [name])
+            return cursor.fetchone() is not None
+
+    def test_deletes_everything_of_the_business(self):
+        with tempfile.TemporaryDirectory() as directory, override_settings(TUNNELS_FILE=Path(directory) / 't.txt'), \
+                mock.patch('apps.platform.bots.call') as telegram:
+            response = self.delete()
+            tunnels = (Path(directory) / 't.txt').read_text().split()
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Business.objects.filter(slug='closing-soon').exists())
+        self.assertFalse(Domain.objects.filter(domain__startswith='closing-soon').exists())
+        self.assertFalse(BusinessBot.objects.filter(telegram_id=4004).exists())
+        self.assertFalse(self.schema_exists('closing_soon'))
+        self.assertFalse(self.media.parent.exists())
+        self.assertEqual(telegram.call_args_list[0].args[:2], ('4004:CLOSING-BOT-TOKEN', 'setChatMenuButton'))
+        self.assertNotIn('closing-soon', tunnels)
+        self.assertEqual(self.hub.get('/api/v1/businesses/closing-soon').status_code, 404)
+        shop = self.make_client('closing-soon.localhost').get('/api/v1/shop')
+        self.assertEqual(shop.json(), {'error': 'unknown_host'})
+
+    def test_only_a_suspended_business(self):
+        Business.objects.filter(pk=self.business.pk).update(status=Business.STATUS_ACTIVE)
+        response = self.delete()
+        self.assertEqual((response.status_code, response.json()), (409, {'error': 'business_active'}))
+        self.assertTrue(self.schema_exists('closing_soon'))
+
+    def test_the_slug_must_be_typed(self):
+        for confirm in ('', 'closing', 'Closing-Soon'):
+            response = self.delete(confirm=confirm)
+            self.assertEqual((response.status_code, response.json()), (400, {'error': 'confirmation_required'}))
+        self.assertTrue(Business.objects.filter(slug='closing-soon').exists())
+
+    def test_telegram_out_of_reach_does_not_stop_it(self):
+        offline = TelegramError('setChatMenuButton', 'Connection refused')
+        with mock.patch('apps.platform.bots.call', side_effect=offline) as telegram:
+            self.assertEqual(self.delete().status_code, 204)
+        self.assertEqual(telegram.call_count, 1)  # no point waiting for the other calls
+
+    def test_only_our_staff_and_only_businesses(self):
+        anonymous = self.make_client('hub.localhost')
+        self.assertEqual(anonymous.delete('/api/v1/businesses/closing-soon', {'confirm': 'closing-soon'},
+                                          format='json').status_code, 401)
+        self.assertEqual(self.delete(slug='nope', confirm='nope').json(), {'error': 'not_found'})

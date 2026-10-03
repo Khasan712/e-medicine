@@ -168,6 +168,25 @@ paths:
               schema:
                 $ref: '#/components/schemas/BusinessDetail'
           description: ''
+    delete:
+      operationId: businesses_destroy
+      description: 'Drops its schema (staff, catalog, customers, orders), domains,
+        bots and uploaded files. Errors: 409 business_active, 400 confirmation_required.'
+      summary: Delete the business for good (only a suspended one; its slug typed
+        as confirmation)
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        required: true
+      tags:
+      - businesses
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/v1/businesses/{slug}/bots:
     post:
       operationId: businesses_bots_create

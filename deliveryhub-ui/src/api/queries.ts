@@ -6,6 +6,7 @@ import type {
   BotRole,
   BusinessCreateInput,
   BusinessDetail,
+  BusinessList,
   BusinessProfilePatch,
   BusinessStatus,
   PlatformUser,
@@ -169,6 +170,20 @@ export function useSetBusinessStatus(slug: string) {
   return useMutation({
     mutationFn: (status: BusinessStatus) => businessesApi.setStatus(slug, status),
     onSuccess: store,
+  })
+}
+
+export function useDeleteBusiness(slug: string) {
+  const client = useQueryClient()
+  return useMutation({
+    mutationFn: (confirm: string) => businessesApi.remove(slug, confirm),
+    onSuccess: () => {
+      client.removeQueries({ queryKey: queryKeys.business(slug) })
+      client.setQueryData<BusinessList>(queryKeys.businesses, (list) =>
+        list && { ...list, results: list.results.filter((each) => each.slug !== slug) },
+      )
+      void client.invalidateQueries({ queryKey: queryKeys.businesses })
+    },
   })
 }
 

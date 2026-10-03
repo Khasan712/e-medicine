@@ -233,6 +233,10 @@ Our staff only (superusers of the platform; session auth).
 * `GET /api/v1/businesses/{slug}` → `BusinessDetail`.
 * `PATCH /api/v1/businesses/{slug}` (`name`, `tagline`, `support_phone`, `delivery_time`, `min_order`, `brand_color`, `logo`) → `BusinessDetail`.
 * `POST /api/v1/businesses/{slug}/status` `{"status": "active" | "suspended"}` → `BusinessDetail`.
+* `DELETE /api/v1/businesses/{slug}` `{"confirm": "<slug>"}` → `204` — deletes the business for good: its schema (staff,
+  catalog, customers, orders), domains, bots, setup links and uploaded files; its bots are released first (Mini App
+  button and commands reset — the bots stay their owners'). Only a suspended business: `409 business_active`;
+  `confirm` must be the slug: `400 confirmation_required`.
 * `POST /api/v1/businesses/{slug}/owner-password` → `{"phone", "password"}` (a new password, shown once);
   `400 owner_missing`.
 
@@ -253,4 +257,4 @@ Our staff only (superusers of the platform; session auth).
   — the owner opens it and creates both bots in two taps (Telegram Managed Bots). `400 platform_bot_missing`.
 * `POST /api/v1/businesses/{slug}/bots` `{"role": "client" | "admin", "token": "<token from @BotFather>"}` → `{"bot": Bot}`;
   `400 invalid_token` / `bot_in_use`.
-* `DELETE /api/v1/businesses/{slug}/bots/{role}` → `204`.
+* `DELETE /api/v1/businesses/{slug}/bots/{role}` → `204` (the bot is released: its Mini App button and commands are reset).

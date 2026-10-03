@@ -269,6 +269,16 @@ export const handlers = [
   }),
   route('get', '/businesses/:slug', withBusiness((business) => HttpResponse.json(business))),
   route(
+    'delete',
+    '/businesses/:slug',
+    withBusiness((business, { body }) => {
+      if (business.status === 'active') return error(409, 'business_active')
+      if (String(body.confirm ?? '').trim() !== business.slug) return error(400, 'confirmation_required')
+      backend.state.businesses = backend.state.businesses.filter((each) => each.slug !== business.slug)
+      return new HttpResponse(null, { status: 204 })
+    }),
+  ),
+  route(
     'patch',
     '/businesses/:slug',
     withBusiness((business, { body }) => {

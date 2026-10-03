@@ -26,6 +26,7 @@ import { cx } from '../../lib/cx'
 import { formatDate, formatNumber } from '../../lib/format'
 import { AddressesCard } from './AddressesCard'
 import { BotsSection } from './bots'
+import { DangerZone } from './DangerZone'
 import { OwnerCard } from './OwnerCard'
 import { ProfileForm } from './ProfileForm'
 import { StatusToggle } from './StatusToggle'
@@ -142,6 +143,8 @@ function BusinessView({ slug }: { slug: string }) {
           <OwnerCard business={business} />
         </div>
       </div>
+
+      <DangerZone business={business} />
     </div>
   )
 }

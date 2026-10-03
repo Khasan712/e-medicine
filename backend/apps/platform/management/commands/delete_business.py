@@ -1,17 +1,12 @@
-import shutil
-from pathlib import Path
-
-from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from django.db import connection, transaction
 
 from apps.platform.overview import businesses
-from apps.platform.provisioning import write_tunnels_file
+from apps.platform.provisioning import delete_business
 
 
 class Command(BaseCommand):
     help = ('Deletes businesses for good: their schema (every order, customer, product), domains, bots and uploaded '
-            'files. There is no undo — the panel can only suspend a business.')
+            'files. There is no undo. Our panel does the same for one suspended business.')
 
     def add_arguments(self, parser):
         parser.add_argument('slugs', nargs='*', help='slugs of the businesses to delete')
@@ -36,12 +31,5 @@ class Command(BaseCommand):
             raise CommandError('Cancelled')
 
         for business in targets:
-            schema = business.schema_name
-            with transaction.atomic(), connection.cursor() as cursor:
-                # Checks deferred until the end of the transaction run now: a table with pending checks cannot
-                # be dropped (a business created in the same transaction).
-                cursor.execute('SET CONSTRAINTS ALL IMMEDIATE')
-                business.delete(force_drop=True)  # drops the schema; domains, bots and setups go with the row
-            shutil.rmtree(Path(settings.MEDIA_ROOT) / schema, ignore_errors=True)
-            self.stdout.write(self.style.SUCCESS(f'deleted {business.slug} (schema {schema})'))
-        write_tunnels_file()
+            delete_business(business)
+            self.stdout.write(self.style.SUCCESS(f'deleted {business.slug} (schema {business.schema_name})'))

@@ -59,6 +59,7 @@ make test           # hammasi
 make test-backend   # pytest + flake8 (vaqtinchalik PostgreSQL konteyneri bilan)
 make test-bot       # pytest-asyncio
 make test-ui        # har bir UI: vitest + lint + build
+make e2e            # Playwright: o'zining vaqtinchalik stack'ida (8200), keyin o'chiriladi
 make schema         # docs/openapi/*.yaml ni koddan yangilash
 ```
 
@@ -70,6 +71,11 @@ make schema         # docs/openapi/*.yaml ni koddan yangilash
    yaratiladi (Telegram Managed Bots). Tokenlar platformaga o'zi keladi, bot servisi ularni ~10 soniyada ishga
    tushiradi va sozlaydi (Mini App tugmasi, buyruqlar, tavsif). Busiz ham bo'ladi: "@BotFather tokeni bilan ulash".
 3. Egasi admin panelda mahsulotlarini qo'shadi, xodimlarini **Telegram bot** sahifasidagi QR orqali ulaydi.
+
+**Biznesni o'chirish:** biznes sahifasining pastidagi "Biznesni o'chirish" — faqat to'xtatilgan biznes, manzilini
+(slug) qo'lda yozib tasdiqlangach. Sxemasi (buyurtmalar, mijozlar, mahsulotlar, xodimlar), domenlari, rasmlari
+o'chadi; botlar platformadan uziladi (Mini App tugmasi va buyruqlari tozalanadi, botlar Telegram'da egasida qoladi).
+Qaytarib bo'lmaydi — kerak bo'lsa avval `make backup`.
 
 Platforma boti uchun: @BotFather'da bot yarating, unda **Bot Management** rejimini yoqing va tokenini `.env` dagi
 `PLATFORM_BOT_TOKEN` ga yozing.

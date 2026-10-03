@@ -45,6 +45,8 @@ export const businessesApi = {
     request<BusinessDetail>('PATCH', business(slug), body(patch, logo)),
   setStatus: (slug: string, status: BusinessStatus) =>
     request<BusinessDetail>('POST', `${business(slug)}/status`, { json: { status } }),
+  /** Deletes a suspended business for good; `confirm` is its slug, typed by hand. */
+  remove: (slug: string, confirm: string) => request<void>('DELETE', business(slug), { json: { confirm } }),
   newOwnerPassword: (slug: string) => request<Credentials>('POST', `${business(slug)}/owner-password`),
   setupLink: (slug: string) => request<SetupLink>('POST', `${business(slug)}/bots/setup-link`),
   connectBot: (slug: string, role: BotRole, token: string) =>

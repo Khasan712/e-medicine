@@ -43,7 +43,7 @@ Fallbacks: `VITE_PLATFORM_DOMAIN` at build time, the links of existing businesse
 | `/login?next=…` | phone + password; any `401` leads here and back to `next` afterwards |
 | `/` | totals, search/filter, business cards (status, address, numbers, bots with alive dot) |
 | `/new` | new business: address from the name (Uzbek Cyrillic → Latin), live availability, brand color, logo, owner |
-| `/b/<slug>` | header actions, numbers, bots (setup link + QR, token, disconnect), addresses, profile, owner password |
+| `/b/<slug>` | header actions, numbers, bots (setup link + QR, token, disconnect), addresses, profile, owner password, delete (a suspended business; its slug typed to confirm) |
 
 The owner's credentials after creating a business travel in the history state and are shown once (gone after a
 reload). Pages `/new` and `/b/<slug>` are separate chunks, preloaded when the browser is idle.

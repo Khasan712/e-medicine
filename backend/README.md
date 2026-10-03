@@ -51,7 +51,7 @@ Useful commands:
 | `manage.py ensure_platform` | our panel + its domains, every business's domains for the current `PLATFORM_DOMAIN`, our admin account |
 | `manage.py ensure_platform_admin` | creates / updates our admin account from the environment |
 | `manage.py migrate_schemas` | migrations of the public schema and of every business |
-| `manage.py delete_business <slug>… [--prefix e2e-] [--yes]` | deletes businesses for good: schema, domains, bots, files |
+| `manage.py delete_business <slug>… [--prefix e2e-] [--yes]` | deletes businesses for good: schema, domains, bots, files (our panel: `DELETE /api/v1/businesses/<slug>`) |
 | `manage.py tenant_command shell --schema=<schema> < scripts/seed_data.py` | demo catalog for one business |
 | `manage.py spectacular --urlconf config.urls.shop --file ../docs/openapi/shop.yaml` | OpenAPI file of one API |
 

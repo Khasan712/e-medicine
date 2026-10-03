@@ -20,6 +20,8 @@ const MESSAGES: Record<string, string> = {
   bot_in_use: 'Bu bot boshqa biznesga ulangan',
   platform_bot_missing: "Havola yaratib bo'lmadi. Platforma boti tokenini tekshiring.",
   owner_missing: 'Egasining admin akkaunti topilmadi.',
+  business_active: "Avval biznesni to'xtating — faqat to'xtatilgan biznes o'chiriladi.",
+  confirmation_required: 'Tasdiqlash uchun biznes manzilini aynan yozing.',
   unknown_host: "Bu manzil platformada ro'yxatdan o'tmagan. Panel manzilini tekshiring.",
 }
 

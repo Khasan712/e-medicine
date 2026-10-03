@@ -204,6 +204,54 @@ describe('business page', () => {
     expect(screen.queryByText(/hozir ishlamayapti/)).not.toBeInTheDocument()
   })
 
+  it('deletes a suspended business for good once its address is typed', async () => {
+    backend.state.businesses = [makeBusiness({ status: 'suspended' }), makeBusiness({ slug: 'pizza-palace', name: 'Pizza Palace' })]
+    const { user } = renderApp('/b/burger-house')
+
+    const zone = within(await screen.findByRole('region', { name: "Biznesni o'chirish" }))
+    await user.click(zone.getByRole('button', { name: "Biznesni o'chirish" }))
+    const dialog = within(screen.getByRole('alertdialog', { name: "«Burger House» butunlay o'chirilsinmi?" }))
+    const confirm = dialog.getByRole('button', { name: "Butunlay o'chirish" })
+    expect(confirm).toBeDisabled()
+    const field = dialog.getByLabelText(/Tasdiqlash uchun manzilni yozing/)
+    await user.type(field, 'burger')
+    expect(confirm).toBeDisabled()
+    await user.type(field, '-house')
+    await user.click(confirm)
+
+    expect(await screen.findByText("Biznes o'chirildi")).toBeInTheDocument()
+    expect(backend.requests('DELETE', '/businesses/burger-house')[0]?.body).toEqual({ confirm: 'burger-house' })
+    expect(await screen.findByRole('heading', { level: 1, name: 'Bizneslar' })).toBeInTheDocument()
+    expect(await screen.findByText('Pizza Palace')).toBeInTheDocument()
+    // Gone from the list (its name is only in the toast now).
+    expect(document.querySelector('a[href="/b/burger-house"]')).toBeNull()
+  })
+
+  it('asks to suspend an active business before deleting it', async () => {
+    backend.state.businesses = [makeBusiness()]
+    renderApp('/b/burger-house')
+
+    const zone = within(await screen.findByRole('region', { name: "Biznesni o'chirish" }))
+    expect(zone.getByRole('button', { name: "Biznesni o'chirish" })).toBeDisabled()
+    expect(zone.getByText(/Avval biznesni to'xtating/)).toBeInTheDocument()
+  })
+
+  it('shows why the business could not be deleted', async () => {
+    backend.state.businesses = [makeBusiness({ status: 'suspended' })]
+    const { server } = await import('./server')
+    const { http, HttpResponse } = await import('msw')
+    server.use(http.delete('/api/v1/businesses/burger-house', () =>
+      HttpResponse.json({ error: 'business_active' }, { status: 409 }), { once: true }))
+    const { user } = renderApp('/b/burger-house')
+
+    await user.click(await screen.findByRole('button', { name: "Biznesni o'chirish" }))
+    const dialog = within(screen.getByRole('alertdialog'))
+    await user.type(dialog.getByLabelText(/Tasdiqlash uchun manzilni yozing/), 'burger-house')
+    await user.click(dialog.getByRole('button', { name: "Butunlay o'chirish" }))
+    expect(await dialog.findByText(/Avval biznesni to'xtating/)).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Burger House' })).toBeInTheDocument()
+  })
+
   it('makes a new owner password and shows it once', async () => {
     backend.state.businesses = [makeBusiness()]
     const { user } = renderApp('/b/burger-house')

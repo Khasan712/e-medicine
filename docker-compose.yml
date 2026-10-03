@@ -2,6 +2,7 @@
 #   docker compose up -d --build      → http://hub.localhost:8100 (our panel), http://<slug>.localhost:8100 (shops),
 #                                       http://<slug>-admin.localhost:8100 (admin panels)
 # Production: the web container serves plain HTTP on WEB_PORT; TLS ends at the edge in front (docs/deploy.md).
+# A second, throwaway stack (make e2e): STACK_NAME / ENV_FILE / ports from its own --env-file, own project name.
 name: deliveryhub
 
 x-backend-env: &backend-env
@@ -12,7 +13,7 @@ x-backend-env: &backend-env
 services:
   db:
     image: postgres:16-alpine
-    container_name: deliveryhub_db
+    container_name: ${STACK_NAME:-deliveryhub}_db
     restart: always
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-deliveryhub}
@@ -30,16 +31,16 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: deliveryhub_redis
+    container_name: ${STACK_NAME:-deliveryhub}_redis
     restart: always
     command: ["redis-server", "--save", "", "--appendonly", "no"]  # cache only
 
   # The API of all three UIs; applies the migrations of every business on start.
   backend:
     build: ./backend
-    container_name: deliveryhub_backend
+    container_name: ${STACK_NAME:-deliveryhub}_backend
     restart: always
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     environment: *backend-env
     volumes:
       - media:/app/media
@@ -53,9 +54,9 @@ services:
   # database directly (no HTTP hop to the backend).
   bot:
     build: ./bot
-    container_name: deliveryhub_bot
+    container_name: ${STACK_NAME:-deliveryhub}_bot
     restart: always
-    env_file: .env
+    env_file: ${ENV_FILE:-.env}
     environment: *backend-env
     depends_on:
       backend:
@@ -63,22 +64,22 @@ services:
 
   client-ui:
     build: ./client-ui
-    container_name: deliveryhub_client_ui
+    container_name: ${STACK_NAME:-deliveryhub}_client_ui
     restart: always
 
   admin-ui:
     build: ./admin-ui
-    container_name: deliveryhub_admin_ui
+    container_name: ${STACK_NAME:-deliveryhub}_admin_ui
     restart: always
 
   deliveryhub-ui:
     build: ./deliveryhub-ui
-    container_name: deliveryhub_hub_ui
+    container_name: ${STACK_NAME:-deliveryhub}_hub_ui
     restart: always
 
   web:
     image: caddy:2.11-alpine
-    container_name: deliveryhub_web
+    container_name: ${STACK_NAME:-deliveryhub}_web
     restart: always
     environment:
       PLATFORM_HUB_SUBDOMAIN: ${PLATFORM_HUB_SUBDOMAIN:-deliveryhub}

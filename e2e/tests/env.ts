@@ -1,7 +1,20 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 
-const port = process.env.E2E_PORT ?? '8100'
+/** Settings of the throwaway stack `make e2e` starts (e2e/.stack.env), when it is there. */
+function stackEnv(): Record<string, string> {
+  const file = fileURLToPath(new URL('../.stack.env', import.meta.url))
+  if (!existsSync(file)) return {}
+  return Object.fromEntries(
+    readFileSync(file, 'utf8')
+      .split('\n')
+      .filter((line) => line.includes('=') && !line.startsWith('#'))
+      .map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]),
+  )
+}
+
+const stack = stackEnv()
+const port = process.env.E2E_PORT ?? stack.WEB_PORT ?? '8200'
 
 /** Addresses of the parts, as the web container serves them locally (`*.localhost` → 127.0.0.1). */
 export const urls = {
@@ -15,18 +28,15 @@ interface Account {
   password: string
 }
 
-/** Our panel's test account: E2E_PLATFORM_PHONE / E2E_PLATFORM_PASSWORD, else the local `.dev-accounts.txt`. */
+/** Our panel's account: E2E_PLATFORM_PHONE / E2E_PLATFORM_PASSWORD, else the one of the throwaway stack. */
 export function platformAccount(): Account {
-  const { E2E_PLATFORM_PHONE: phone, E2E_PLATFORM_PASSWORD: password } = process.env
-  if (phone && password) return { phone, password }
-  const file = fileURLToPath(new URL('../../.dev-accounts.txt', import.meta.url))
-  const line = existsSync(file) ? readFileSync(file, 'utf8').split('\n').find((row) => row.startsWith('platform')) : undefined
-  const match = line?.match(/phone=(\S+) password=(\S+)/)
-  if (!match) throw new Error('Set E2E_PLATFORM_PHONE and E2E_PLATFORM_PASSWORD (a platform staff account)')
-  return { phone: match[1], password: match[2] }
+  const phone = process.env.E2E_PLATFORM_PHONE ?? stack.PLATFORM_ADMIN_PHONE
+  const password = process.env.E2E_PLATFORM_PASSWORD ?? stack.PLATFORM_ADMIN_PASSWORD
+  if (!phone || !password) throw new Error('Run the tests with `make e2e` (or set E2E_PLATFORM_PHONE / E2E_PLATFORM_PASSWORD)')
+  return { phone, password }
 }
 
-/** A business of this run: the slug starts with `e2e-` (`manage.py delete_business --prefix e2e-` removes them). */
+/** A business of this run (`e2e-<stamp>`). */
 export function newBusiness() {
   const stamp = Date.now().toString(36)
   const digits = String(Date.now()).slice(-7)
