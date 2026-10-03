@@ -6,11 +6,15 @@ import { Stepper } from '../../components/Stepper'
 import { useI18n } from '../../i18n/i18n'
 import { cn } from '../../lib/cn'
 import { haptic } from '../../lib/telegram'
+import { ROOMY_QUERY, useMediaQuery } from '../../lib/useMediaQuery'
 import { useCart } from '../../state/cart'
 import { useNav } from '../../state/nav'
 
 /** The card's open-details button covers the whole card; the cart controls sit above it. */
 const COVER = "text-left after:absolute after:inset-0 after:rounded-[20px] after:content-['']"
+
+/** A control lying on a photo. */
+const RAISED = 'shadow-[0_4px_14px_rgb(0_0_0/0.28)]'
 
 function inCartFrame(qty: number) {
   return qty > 0 ? 'border-brand-text ring-1 ring-brand-text' : 'border-line'
@@ -79,9 +83,15 @@ function useCard(product: Product) {
   }
 }
 
-/** A menu line: name, description and price on the left, the photo on the right. */
+/**
+ * A menu line: name, description and price on the left, the photo on the right. The "+" sits next to the price
+ * where there is room; on phones it sits on the corner of the photo, so that the stepper it turns into never
+ * squeezes the price of a narrow (360px) screen.
+ */
 export function ProductCard({ product, className }: { product: Product; className?: string }) {
   const { nameId, title, description, price, qty, open } = useCard(product)
+  const roomy = useMediaQuery(ROOMY_QUERY)
+  const control = <CardControl product={product} title={title} nameId={nameId} qty={qty} className={roomy ? undefined : RAISED} />
   return (
     <article
       aria-label={title}
@@ -98,16 +108,19 @@ export function ProductCard({ product, className }: { product: Product; classNam
           </button>
         </h3>
         {description && <p className="mt-1 line-clamp-2 text-[13px] leading-[1.45] text-muted">{description}</p>}
-        <div className="mt-auto flex items-center gap-1.5 pt-2.5">
+        <div className="mt-auto flex min-h-11 items-center gap-1.5 pt-2.5">
           <span className="tabular min-w-0 flex-1 truncate text-[15.5px] font-extrabold tracking-[-0.01em]">{price}</span>
-          <CardControl product={product} title={title} nameId={nameId} qty={qty} />
+          {roomy && control}
         </div>
       </div>
-      <ProductImage
-        src={product.image}
-        name={title}
-        className="size-[104px] shrink-0 rounded-[14px] [&_img]:transition-[opacity,transform] [&_img]:duration-500 [&_img]:ease-smooth group-hover:[&_img]:scale-[1.045]"
-      />
+      <div className="relative size-[112px] shrink-0 sm:size-[104px]">
+        <ProductImage
+          src={product.image}
+          name={title}
+          className="size-full rounded-[14px] [&_img]:transition-[opacity,transform] [&_img]:duration-500 [&_img]:ease-smooth group-hover:[&_img]:scale-[1.045]"
+        />
+        {!roomy && <div className="absolute right-1 bottom-1 z-[1] flex">{control}</div>}
+      </div>
     </article>
   )
 }
@@ -132,7 +145,7 @@ export function FeaturedCard({ product, compact = false }: { product: Product; c
               title={title}
               nameId={nameId}
               qty={qty}
-              className="shadow-[0_4px_14px_rgb(0_0_0/0.28)]"
+              className={RAISED}
             />
           </div>
         </div>
@@ -184,7 +197,7 @@ export function ProductCardSkeleton() {
         <div className="skeleton mt-2.5 h-3 w-4/5" />
         <div className="skeleton mt-auto h-4 w-1/3" />
       </div>
-      <div className="skeleton size-[104px] shrink-0" />
+      <div className="skeleton size-[112px] shrink-0 sm:size-[104px]" />
     </div>
   )
 }

@@ -51,7 +51,7 @@ describe('catalog', () => {
       window.matchMedia = matchMedia
     })
 
-    it('shows the categories on the left, the search in the header and the cart beside the menu', async () => {
+    it('shows the categories on the left, the search above the banner and the cart beside the menu', async () => {
       const { user } = renderApp({ cart: [{ id: 3, qty: 2 }] })
       const rail = await screen.findByRole('navigation', { name: uz.categories })
       expect(within(rail).getAllByRole('button').map((item) => item.textContent)).toEqual([
@@ -62,8 +62,11 @@ describe('catalog', () => {
       ])
       expect(within(rail).getByRole('button', { name: uz.popularShort })).toHaveAttribute('aria-current', 'true')
 
-      const search = within(screen.getByRole('banner')).getByRole('searchbox', { name: uz.searchPlaceholder })
-      expect(screen.getAllByRole('searchbox')).toHaveLength(1)
+      // The search sits above the banner, not in the header; the header keeps the links to the menu and orders.
+      const search = screen.getByRole('searchbox', { name: uz.searchPlaceholder })
+      expect(within(screen.getByRole('banner')).queryByRole('searchbox')).not.toBeInTheDocument()
+      const links = within(screen.getByRole('navigation', { name: uz.mainNavigation }))
+      expect(links.getAllByRole('link').map((link) => link.textContent)).toEqual([uz.menu, uz.orders])
 
       const cart = screen.getByRole('region', { name: uz.cart })
       expect(within(cart).getByText('2 ta mahsulot')).toBeInTheDocument()

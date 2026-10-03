@@ -90,7 +90,7 @@ export function OrdersScreen() {
   }
 
   return (
-    <div className="pb-12">
+    <div className="mx-auto max-w-[880px] pb-12">
       <PageTitle actions={refresh}>{t('orders')}</PageTitle>
       {content}
     </div>

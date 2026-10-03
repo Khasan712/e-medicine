@@ -6,8 +6,8 @@ import { useCatalog } from '../../state/catalog'
 
 function Chip({ icon, children }: { icon: IconName; children: ReactNode }) {
   return (
-    <span className="inline-flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-full bg-[color-mix(in_srgb,var(--hero-ink)_12%,transparent)] px-3 text-[13px] font-bold whitespace-nowrap">
-      <Icon name={icon} className="size-4" />
+    <span className="inline-flex h-7 max-w-full min-w-0 items-center gap-1 rounded-full bg-[color-mix(in_srgb,var(--hero-ink)_12%,transparent)] px-2.5 text-xs font-bold whitespace-nowrap sm:h-8 sm:gap-1.5 sm:px-3 sm:text-[13px]">
+      <Icon name={icon} className="size-3.5 sm:size-4" />
       <span className="truncate">{children}</span>
     </span>
   )
@@ -29,7 +29,7 @@ export function Hero() {
         <p className="mt-2 text-sm font-medium text-[color-mix(in_srgb,var(--hero-ink)_74%,transparent)] sm:text-[15px]">
           {t('heroText')}
         </p>
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className="mt-3.5 flex flex-wrap gap-1.5 sm:mt-4 sm:gap-2">
           {business.delivery_time && <Chip icon="clock">{t('deliveryTime', { time: business.delivery_time })}</Chip>}
           <Chip icon="cash">{t('cashOrCard')}</Chip>
           {business.min_order > 0 && (

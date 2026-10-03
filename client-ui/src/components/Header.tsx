@@ -3,24 +3,22 @@ import { Link, NavLink, useLocation } from 'react-router'
 import { useI18n } from '../i18n/i18n'
 import { cn } from '../lib/cn'
 import { isTelegram } from '../lib/telegram'
-import { HEADER_SEARCH_QUERY, pageWidth, useMediaQuery } from '../lib/useMediaQuery'
 import { avatarLetter, useAuth } from '../state/auth'
 import { useCart } from '../state/cart'
 import { useCatalog } from '../state/catalog'
 import { useChangeLanguage } from '../state/hooks'
 import { useNav } from '../state/nav'
-import { useSearch } from '../state/search'
 import { useTheme } from '../state/theme'
 import { BusinessLogo } from './BusinessLogo'
 import { IconButton } from './Button'
 import { Icon } from './Icon'
-import { SearchBox } from './SearchBox'
+
+/** The width of every page (the header keeps its place from screen to screen). */
+export const PAGE_WIDTH = 'max-w-[1440px]'
 
 export function Header() {
   const { t, lang } = useI18n()
-  const { business, status } = useCatalog()
-  const search = useSearch()
-  const searchHere = useMediaQuery(HEADER_SEARCH_QUERY)
+  const { business } = useCatalog()
   const { client, token } = useAuth()
   const { count, pulse } = useCart()
   const { openSheet, back } = useNav()
@@ -38,8 +36,6 @@ export function Header() {
   }, [])
 
   const atRoot = pathname === '/'
-  // On wide screens the menu search lives here; phones have it above the menu.
-  const showSearch = atRoot && searchHere && status !== 'error'
 
   return (
     <header
@@ -48,7 +44,7 @@ export function Header() {
         scrolled ? 'border-line' : 'border-transparent',
       )}
     >
-      <div className={cn('mx-auto flex h-[var(--header-h)] w-full items-center gap-2 px-4 md:gap-3 md:px-6', pageWidth(pathname))}>
+      <div className={cn('mx-auto flex h-[var(--header-h)] w-full items-center gap-2 px-4 md:gap-3 md:px-6', PAGE_WIDTH)}>
         {!atRoot && !inTelegram && (
           <IconButton icon="chevron-left" label={t('back')} onClick={back} className="-ml-2 md:hidden" />
         )}
@@ -58,47 +54,36 @@ export function Header() {
           ) : (
             <span className="skeleton size-10 shrink-0 rounded-[13px]" />
           )}
-          <span className="min-w-0">
-            {business ? (
-              <span className="block truncate text-[17px] leading-tight font-extrabold tracking-[-0.02em]">{business.name}</span>
-            ) : (
-              <span className="skeleton block h-4 w-28" />
-            )}
-            {business?.delivery_time ? (
-              <span className="mt-0.5 flex items-center gap-1 text-[12.5px] font-semibold whitespace-nowrap text-muted">
-                <Icon name="clock" className="size-[13px]" />
-                {t('deliveryTime', { time: business.delivery_time })}
-              </span>
-            ) : null}
-          </span>
+          {business ? (
+            <span className="truncate text-[17px] leading-tight font-extrabold tracking-[-0.02em]">{business.name}</span>
+          ) : (
+            <span className="skeleton block h-4 w-28" />
+          )}
         </Link>
 
-        <nav aria-label={t('mainNavigation')} className="ml-5 hidden gap-1 md:flex">
-          {(
-            [
-              ['/', t('menu')],
-              ['/orders', t('orders')],
-            ] as const
-          ).map(([to, label]) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === '/'}
-              className={({ isActive }) =>
-                cn(
-                  'flex h-[38px] items-center rounded-xl px-3.5 text-[14.5px] font-bold transition-colors',
-                  isActive ? 'bg-surface text-ink shadow-sm' : 'text-ink-2 hover:bg-surface-2',
-                )
-              }
-            >
-              {label}
-            </NavLink>
-          ))}
-        </nav>
-
-        {showSearch && <SearchBox value={search.query} onChange={search.setQuery} className="ml-auto w-full max-w-[440px]" />}
-
-        <div className={cn('flex shrink-0 items-center gap-1', showSearch ? 'ml-2' : 'ml-auto')}>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <nav aria-label={t('mainNavigation')} className="mr-2 hidden gap-1 md:flex">
+            {(
+              [
+                ['/', t('menu')],
+                ['/orders', t('orders')],
+              ] as const
+            ).map(([to, label]) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === '/'}
+                className={({ isActive }) =>
+                  cn(
+                    'flex h-[38px] items-center rounded-xl px-3.5 text-[14.5px] font-bold transition-colors',
+                    isActive ? 'bg-surface text-ink shadow-sm' : 'text-ink-2 hover:bg-surface-2',
+                  )
+                }
+              >
+                {label}
+              </NavLink>
+            ))}
+          </nav>
           {!inTelegram && (
             <div role="group" aria-label={t('language')} className="mr-1 hidden rounded-[11px] bg-surface-2 p-[3px] md:flex">
               {(['uz', 'ru'] as const).map((code) => (

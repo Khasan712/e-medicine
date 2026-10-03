@@ -1,9 +1,9 @@
 import { useCallback, useSyncExternalStore } from 'react'
 
+/** From here up a menu line has its "+" next to the price (phones: on the corner of the photo). */
+export const ROOMY_QUERY = '(min-width: 640px)'
 /** From here up popular dishes are a grid of cards (below: a swipeable row). */
 export const DESKTOP_QUERY = '(min-width: 768px)'
-/** From here up the menu search sits in the header (below: above the menu). */
-export const HEADER_SEARCH_QUERY = '(min-width: 1024px)'
 /** From here up the categories are a rail on the left of the menu (below: chips above it). */
 export const WIDE_QUERY = '(min-width: 1360px)'
 
@@ -20,7 +20,3 @@ export function useMediaQuery(query: string): boolean {
   return useSyncExternalStore(subscribe, () => Boolean(window.matchMedia?.(query).matches), () => false)
 }
 
-/** The width of the page: the menu (rail, dishes, cart) is wider than the other screens. */
-export function pageWidth(pathname: string): string {
-  return pathname === '/' ? 'max-w-[1440px]' : 'max-w-[1240px]'
-}
