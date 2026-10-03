@@ -180,6 +180,8 @@ SPECTACULAR_SETTINGS = {
 PLATFORM_DOMAIN = env('PLATFORM_DOMAIN', 'portex.uz')
 PLATFORM_LOCAL_DOMAIN = 'localhost'
 PLATFORM_HUB_SUBDOMAIN = env('PLATFORM_HUB_SUBDOMAIN', 'deliveryhub')
+# Subdomains of PLATFORM_DOMAIN that other projects use (the domain is shared): no business may take them.
+PLATFORM_RESERVED_SUBDOMAINS = env_list('PLATFORM_RESERVED_SUBDOMAINS')
 # Our platform bot: creates the bots of businesses (Telegram Managed Bots). Read here for its username.
 PLATFORM_BOT_TOKEN = env('PLATFORM_BOT_TOKEN')
 TELEGRAM_API_URL = env('TELEGRAM_API_URL', 'https://api.telegram.org')

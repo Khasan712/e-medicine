@@ -41,6 +41,12 @@ class ProvisioningTests(BusinessTestCase):
             provisioning.validate_slug('test-shop')
         provisioning.validate_slug('burger-house')
 
+    @override_settings(PLATFORM_RESERVED_SUBDOMAINS=['norva', 'shop-builder'])
+    def test_subdomains_of_other_projects_are_reserved(self):
+        for slug in ('norva', 'shop-builder'):
+            with self.assertRaisesMessage(provisioning.ProvisioningError, 'slug_reserved'):
+                provisioning.validate_slug(slug)
+
     def test_tunnels_file_is_optional(self):
         provisioning.write_tunnels_file()  # TUNNELS_FILE is not set: nothing to do
         with tempfile.TemporaryDirectory() as directory, override_settings(TUNNELS_FILE=Path(directory) / 't.txt'):

@@ -27,7 +27,8 @@ def schema_for(slug):
 def validate_slug(slug):
     if not (3 <= len(slug) <= 30) or not SLUG_RE.match(slug):
         raise ProvisioningError('slug_invalid')
-    if slug in RESERVED_SLUGS or slug == settings.PLATFORM_HUB_SUBDOMAIN or slug.endswith('-admin'):
+    reserved = RESERVED_SLUGS | {settings.PLATFORM_HUB_SUBDOMAIN, *settings.PLATFORM_RESERVED_SUBDOMAINS}
+    if slug in reserved or slug.endswith('-admin'):
         raise ProvisioningError('slug_reserved')
     if Business.objects.filter(slug=slug).exists() or Business.objects.filter(schema_name=schema_for(slug)).exists():
         raise ProvisioningError('slug_taken')

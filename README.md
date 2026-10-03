@@ -80,11 +80,13 @@ Platforma boti uchun: @BotFather'da bot yarating, unda **Bot Management** rejimi
 |---|---|
 | `SECRET_KEY` | Sessiyalar, mijoz tokenlari va bot tokenlarining shifri — o'zgarsa, botlarni qayta ulash kerak |
 | `PLATFORM_DOMAIN`, `PLATFORM_HUB_SUBDOMAIN` | Bizneslar manzili (`<slug>.domen`) va bizning panel subdomeni |
+| `PLATFORM_RESERVED_SUBDOMAINS` | Domen umumiy: boshqa loyihalarning subdomenlari (biznes ularni ololmaydi) |
 | `PLATFORM_BOT_TOKEN` | Platforma boti (Managed Bots) — bizneslar botlarini yaratadi |
 | `PLATFORM_ADMIN_PHONE`, `PLATFORM_ADMIN_PASSWORD` | Platforma paneliga kirish |
 | `SMS_BACKEND` + `ESKIZ_*` / `TELEGRAM_GATEWAY_TOKEN` | Do'konga telefon orqali kirish kodlari (`console` — faqat log) |
 | `GEMINI_API_KEY`, `GEMINI_*` | Ovozli buyurtma (admin "Sotuv" va xodimlar boti) |
-| `WEB_PORT`, `DB_PORT` | Hostdagi portlar (8100, 5440) |
+| `WEB_PORT`, `WEB_BIND`, `DB_PORT` | Hostdagi portlar (8100 — faqat `127.0.0.1` da, 5440) |
+| `COOKIE_SECURE` | Production'da `True` (faqat HTTPS) |
 
 Biznes nomi, telefoni, logosi va botlari `.env` da emas — platforma panelida (bazada; bot tokenlari shifrlangan).
 To'liq ro'yxat: [`.env.example`](.env.example).
@@ -92,6 +94,13 @@ To'liq ro'yxat: [`.env.example`](.env.example).
 ## Domenlar va production
 
 Har biznes: `<slug>.<PLATFORM_DOMAIN>` — do'kon, `<slug>-admin.<PLATFORM_DOMAIN>` — admin panel; bizning panel —
-`<PLATFORM_HUB_SUBDOMAIN>.<PLATFORM_DOMAIN>`. Production: `*.domen` wildcard DNS → server, TLS — tunnel yoki
-yuk balansirovchida (web konteyner oddiy HTTP), Mini App faqat HTTPS manzilni ochadi. `PLATFORM_DOMAIN` o'zgarsa,
-`manage.py ensure_platform` (har startda ishlaydi) barcha bizneslarga yangi domenlarni qo'shadi.
+`<PLATFORM_HUB_SUBDOMAIN>.<PLATFORM_DOMAIN>`. Web konteyner oddiy HTTP beradi; TLS'ni serverdagi umumiy edge yopadi.
+`PLATFORM_DOMAIN` o'zgarsa, backend (`ensure_platform`, har startda) bizneslarga yangi domenlarni qo'shadi, bot servisi
+esa Mini App tugmalarini yangi manzilga sozlaydi.
+
+Serverga chiqarish (`sizlarbilan.uz`, DNS, edge, ma'lumotlarni ko'chirish, zaxira): **[docs/deploy.md](docs/deploy.md)**.
+
+```bash
+make backup                         # baza + rasmlar → backups/<stamp>/
+make restore FROM=backups/<stamp>   # shu stack'dagi hamma narsani almashtiradi
+```

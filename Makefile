@@ -1,5 +1,5 @@
 # Everyday commands. Each part also works on its own — see its README.
-.PHONY: up down logs ps test test-backend test-bot test-ui e2e schema test-db
+.PHONY: up down logs ps test test-backend test-bot test-ui e2e schema test-db backup restore
 
 up:
 	docker compose up -d --build
@@ -14,6 +14,14 @@ ps:
 	docker compose ps
 
 test: test-backend test-bot test-ui
+
+# The database of every business + uploaded files → backups/<stamp>/ (scripts/backup.sh).
+backup:
+	scripts/backup.sh
+
+# make restore FROM=backups/<stamp> — replaces everything in this stack.
+restore:
+	scripts/restore.sh $(FROM)
 
 # A throwaway PostgreSQL for the backend tests (config/test_settings.py → localhost:55433).
 test-db:

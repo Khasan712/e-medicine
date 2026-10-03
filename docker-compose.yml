@@ -1,6 +1,7 @@
 # DeliveryHub: every part in its own container (docs/architecture.md). Settings: .env (see .env.example).
 #   docker compose up -d --build      → http://hub.localhost:8100 (our panel), http://<slug>.localhost:8100 (shops),
 #                                       http://<slug>-admin.localhost:8100 (admin panels)
+# Production: the web container serves plain HTTP on WEB_PORT; TLS ends at the edge in front (docs/deploy.md).
 name: deliveryhub
 
 x-backend-env: &backend-env
@@ -85,7 +86,8 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - media:/srv/media:ro
     ports:
-      - "${WEB_PORT:-8100}:80"
+      # Only the edge proxy / tunnel on this host talks to it (WEB_BIND=0.0.0.0 opens it to the network).
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8100}:80"
     depends_on:
       - backend
       - client-ui

@@ -29,3 +29,5 @@ coverage/
 .DS_Store
 CLAUDE.md
 .dev-accounts.txt
+docker-compose.override.yml
+backups/

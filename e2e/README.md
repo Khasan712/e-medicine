@@ -5,12 +5,12 @@ catalog, a customer orders in the shop, the owner completes the order and the cu
 
 ```bash
 docker compose up -d --build   # from the repository root; the stack needs SHOP_OTP_DEBUG=True (the shop shows
-                               # the sign-in code) — a local stack only
+                               # the sign-in code) — a LOCAL development stack only, never production
 make e2e                       # npm ci, playwright test, then deletes the e2e-* businesses
 ```
 
-* A platform staff account is needed: `E2E_PLATFORM_PHONE` / `E2E_PLATFORM_PASSWORD`, or the local
-  `../.dev-accounts.txt` (`platform …: phone=… password=…`).
+* A platform staff account of that stack is needed: `E2E_PLATFORM_PHONE` / `E2E_PLATFORM_PASSWORD`, or a local
+  `../.dev-accounts.txt` (gitignored) with a line `platform …: phone=… password=…`.
 * `E2E_PORT` — the port of the `web` container (default 8100). Hosts: `hub.localhost`, `<slug>.localhost`,
   `<slug>-admin.localhost`.
 * Every run opens a business `e2e-<stamp>`; `manage.py delete_business --prefix e2e- --yes` removes them.
